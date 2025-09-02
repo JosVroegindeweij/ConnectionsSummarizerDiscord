@@ -1,0 +1,23 @@
+{
+  "name": "connectionssummarizerdiscord",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/JosVroegindeweij/ConnectionsSummarizerDiscord#readme",
+  "bugs": {
+    "url": "https://github.com/JosVroegindeweij/ConnectionsSummarizerDiscord/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JosVroegindeweij/ConnectionsSummarizerDiscord.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "discord.js": "^14.22.1"
+  }
+}
