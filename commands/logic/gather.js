@@ -27,7 +27,7 @@ export const execute = async (interaction) => {
   info("Gathering connections results...", interaction.guild.name);
   let messages;
   let totalGathered = 0;
-  let relevant = 0;
+  let totalRelevant = 0;
 
   do {
     messages = await fromChannel.messages.fetch({
@@ -37,27 +37,28 @@ export const execute = async (interaction) => {
     });
     totalGathered += messages.size;
     info(
-      `Gathered ${messages.size} messages up to ${messages.first()?.id}`,
+      `Gathered ${messages.size} messages up to ${messages.first()?.id}. Relevant so far: ${totalRelevant}`,
       interaction.guild.name,
     );
 
     messages.forEach((msg) => {
       if (isRelevant(msg)) {
-        relevant++;
+        console.log(msg.content);
+        totalRelevant++;
       }
     });
 
     fromMessageOn = messages.first()?.id;
     if (totalGathered % 20 === 0) {
       await interaction.editReply(
-        `Gathered ${totalGathered} messages so far...`,
+        `Gathered ${totalGathered} messages so far. Found ${totalRelevant} relevant messages!`,
       );
     }
   } while (messages.size >= 5);
 
-  info(`Total gathered messages: ${totalGathered}`, interaction.guild.name);
+  info(`Total gathered messages: ${totalGathered}. Total relevant messages: ${totalRelevant}`, interaction.guild.name);
   await interaction.editReply(
-    `Gathering complete! Gathered ${totalGathered} messages.`,
+    `Gathering complete! Gathered ${totalGathered} messages. Found ${totalRelevant} relevant messages!`,
   );
 };
 
@@ -68,7 +69,8 @@ const isRelevant = (message) => {
   let rowCount = 0;
 
   for (const line of lines) {
-    if (/^[🟩🟨🟦🟪]{4}$/.test(line.trim())) {
+    const cleanLine = line.replace(/\s+/g, '');
+    if (/[🟩🟨🟦🟪]{8}/.test(cleanLine)) {
       rowCount++;
     }
   }
