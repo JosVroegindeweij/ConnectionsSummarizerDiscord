@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
 
 import { info, error } from "./utils/logger.js";
-// import { initCommands, onMessage } from "./utils/commandHandler.js";
+import { initCommands } from "./utils/commandHandler.js";
 
 import config from "./secrets/config.json" with { type: "json" };
 
@@ -50,9 +50,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.login(config.token);
 
-// initCommands(client);
-
-// client.on("messageCreate", onMessage.bind(null, client));
+initCommands(client);
 
 process.on("unhandledRejection", (msg) => {
   error("Unhandled promise rejection:" + msg, "main");
