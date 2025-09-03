@@ -10,11 +10,12 @@ export const data = new SlashCommandBuilder()
       .setDescription("The channel to harvest messages from")
       .setRequired(true),
   )
-  .addStringOption((option) =>
-    option
-      .setName("startingfrommessageid")
-      .setDescription("Start looking after this message")
-      .setRequired(true),
+  .addStringOption(
+    (option) =>
+      option
+        .setName("startingfrommessageid")
+        .setDescription("Start looking after this message")
+        .setRequired(true), // Later false when this gets retrieved from the db
   );
 
 export const execute = async (interaction) => {
@@ -33,10 +34,17 @@ export const execute = async (interaction) => {
       limit: 5,
       cache: false,
     });
-    messages.forEach((message) => console.log(message.content));
     totalHarvested += messages.size;
-    info(`Harvested ${messages.size} messages`, interaction.guild.name);
+    info(
+      `Harvested ${messages.size} messages up to ${messages.first()?.id}`,
+      interaction.guild.name,
+    );
     fromMessageOn = messages.first()?.id;
+    if (totalHarvested % 20 === 0) {
+      await interaction.editReply(
+        `Harvested ${totalHarvested} messages so far...`,
+      );
+    }
   } while (messages.size >= 5);
 
   info(`Total harvested messages: ${totalHarvested}`, interaction.guild.name);
