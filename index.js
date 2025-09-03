@@ -29,14 +29,19 @@ const client = new Client({
   ],
 });
 
-client.once("ready", () => {
-  info("Bot launched!", "main");
+client.on(Events.ClientReady, (readyClient) => {
+  info(`Logged in as ${readyClient.user.tag}`, "main");
 });
 
-client
-  .login(token)
-  .then((_) => info("Logged in", "main"))
-  .catch((reason) => error(reason, "main"));
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  if (interaction.commandName === "ping") {
+    await interaction.reply("Pong!");
+  }
+});
+
+client.login(TOKEN);
 
 // initCommands(client);
 
