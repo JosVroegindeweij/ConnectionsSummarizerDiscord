@@ -1,25 +1,9 @@
-import { Client, Events, GatewayIntentBits, REST, Routes } from "discord.js";
+import { Client, Events, GatewayIntentBits } from "discord.js";
 
 import { info, error } from "./utils/logger.js";
 // import { initCommands, onMessage } from "./utils/commandHandler.js";
 
 import config from "./secrets/config.json" with { type: "json" };
-
-const rest = new REST({ version: "10" }).setToken(config.token);
-const commands = [
-  {
-    name: "ping",
-    description: "Replies with Pong!",
-  },
-];
-
-try {
-  info("Registering slash commands.", "main");
-  await rest.put(Routes.applicationCommands(config.client_id), { body: commands });
-  info("Successfully registered slash commands.", "main");
-} catch (msg) {
-  error(msg);
-}
 
 const client = new Client({
   intents: [
@@ -36,8 +20,31 @@ client.on(Events.ClientReady, (readyClient) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === "ping") {
-    await interaction.reply("Pong!");
+  const command = interaction.client.commands.get(interaction.commandName);
+
+  if (!command) {
+    error(
+      `No command matching ${interaction.commandName} was found.`,
+      interaction.guild.name,
+    );
+    return;
+  }
+
+  try {
+    await command.execute(interaction);
+  } catch (msg) {
+    error(msg);
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({
+        content: "There was an error while executing this command!",
+        flags: MessageFlags.Ephemeral,
+      });
+    } else {
+      await interaction.reply({
+        content: "There was an error while executing this command!",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
   }
 });
 
