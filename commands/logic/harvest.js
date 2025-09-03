@@ -12,7 +12,7 @@ export const data = new SlashCommandBuilder()
   )
   .addStringOption((option) =>
     option
-      .setName("fromMessageOn")
+      .setName("startingfrommessageid")
       .setDescription("Start looking after this message")
       .setRequired(true),
   );
@@ -21,7 +21,7 @@ export const execute = async (interaction) => {
   await interaction.reply("Harvesting started!");
 
   const fromChannel = interaction.options.getChannel("channel");
-  let fromMessageOn = interaction.options.getString("fromMessageOn");
+  let fromMessageOn = interaction.options.getString("startingfrommessageid");
 
   info("Harvesting connections results...", interaction.guild.name);
   let messages = await fromChannel.messages.fetch({
