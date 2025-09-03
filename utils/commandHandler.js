@@ -1,8 +1,7 @@
 import { Collection } from "discord.js";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { readdirSync } from 'fs';
-
+import { readdirSync } from "fs";
 
 export const initCommands = async (client) => {
   client.commands = new Collection();

@@ -1,6 +1,6 @@
 import { REST, Routes } from "discord.js";
-import {fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 import config from "./secrets/config.json" with { type: "json" };
 import { info, error } from "./utils/logger.js";
@@ -31,7 +31,7 @@ for (const folder of commandFolders) {
     } else {
       error(
         `The command at ${filePath} is missing a required "data" or "execute" property.`,
-        "main"
+        "main",
       );
     }
   }
