@@ -18,7 +18,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "discord.js": "^14.22.1"
+    "discord.js": "^14.22.1",
+    "path": "^0.12.7",
+    "url": "^0.11.4"
   },
   "devDependencies": {
     "prettier": "3.6.2"
