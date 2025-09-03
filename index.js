@@ -1,11 +1,11 @@
 import { Client, Events, GatewayIntentBits, REST, Routes } from "discord.js";
 
-import { info, error } from "./utils/logger";
-import { initCommands, onMessage } from "./utils/commandHandler";
+import { info, error } from "./utils/logger.js";
+// import { initCommands, onMessage } from "./utils/commandHandler.js";
 
-import { TOKEN, CLIENT_ID } from "./secrets/config.json";
+import config from "./secrets/config.json" with { type: "json" };
 
-const rest = new REST({ version: "10" }).setToken(TOKEN);
+const rest = new REST({ version: "10" }).setToken(config.token);
 const commands = [
   {
     name: "ping",
@@ -14,9 +14,9 @@ const commands = [
 ];
 
 try {
-  info("Registering slash commands.");
-  await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-  info("Successfully registered slash commands.");
+  info("Registering slash commands.", "main");
+  await rest.put(Routes.applicationCommands(config.client_id), { body: commands });
+  info("Successfully registered slash commands.", "main");
 } catch (msg) {
   error(msg);
 }
@@ -41,7 +41,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-client.login(TOKEN);
+client.login(config.token);
 
 // initCommands(client);
 

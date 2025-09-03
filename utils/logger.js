@@ -1,6 +1,6 @@
 import { mkdir, createWriteStream } from "fs";
 
-import { timestamp } from "./utils";
+import { timestamp } from "./utils.js";
 
 let infoStream = createWriteStream("logs/info.txt", { flags: "a" });
 let errorStream = createWriteStream("logs/error.txt", { flags: "a" });
