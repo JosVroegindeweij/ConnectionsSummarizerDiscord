@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info } from "../../utils/logger";
+import { info } from "../../utils/logger.js";
 
 export const data = new SlashCommandBuilder()
   .setName("ping")
