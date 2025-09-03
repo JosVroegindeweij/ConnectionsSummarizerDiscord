@@ -1,9 +1,9 @@
 import { Collection } from "discord.js";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
+import { dirname, join } from "path";
 
 export const initCommands = async (client) => {
-  const commands = new Collection();
+  client.commands = new Collection();
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
@@ -22,7 +22,7 @@ export const initCommands = async (client) => {
       const command = await import(filePath);
 
       if ("data" in command && "execute" in command) {
-        commands.set(command.data.name, command);
+        client.commands.set(command.data.name, command);
       } else {
         error(
           `The command at ${filePath} is missing a required "data" or "execute" property.`,
@@ -31,6 +31,4 @@ export const initCommands = async (client) => {
       }
     }
   }
-
-  client.commands = commands;
 };
