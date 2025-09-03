@@ -1,12 +1,12 @@
 import { SlashCommandBuilder } from "discord.js";
-import { info } from "../../utils/logger";
+import { info } from "../../utils/logger.js";
 
 export const data = new SlashCommandBuilder()
   .setName("harvest")
   .setDescription("Harvests the connections results from channel history!")
   .addChannelOption((option) =>
     option
-      .setName("fromChannel")
+      .setName("channel")
       .setDescription("The channel to harvest messages from")
       .setRequired(true),
   )
@@ -20,7 +20,7 @@ export const data = new SlashCommandBuilder()
 export const execute = async (interaction) => {
   await interaction.reply("Harvesting started!");
 
-  const fromChannel = interaction.options.getChannel("fromChannel");
+  const fromChannel = interaction.options.getChannel("channel");
   let fromMessageOn = interaction.options.getString("fromMessageOn");
 
   info("Harvesting connections results...", interaction.guild.name);
@@ -45,6 +45,7 @@ export const execute = async (interaction) => {
     info(`Harvested ${messages.size} messages`, interaction.guild.name);
   }
 
+  info(`Total harvested messages: ${totalHarvested}`, interaction.guild.name);
   await interaction.reply(
     `Harvesting complete! Harvested ${totalHarvested} messages.`,
   );
