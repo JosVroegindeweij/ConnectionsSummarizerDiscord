@@ -29,7 +29,7 @@ export const addResult = async (
     guild.name,
   );
 
-  const [resultId] = await knex("ConnectionsResult")
+  const [resultId] = await knex("connectionsresult")
     .insert({
       guild_id: guild.id,
       channel_id: channel.id,
@@ -49,7 +49,7 @@ export const addResult = async (
       let cellRecord = connectionsCellDefCache.get(cacheKey);
 
       if (!cellRecord) {
-        cellRecord = await knex("ConnectionsCellDef")
+        cellRecord = await knex("connectionscelldef")
           .where({ row: rowIndex, col: colIndex, color })
           .first();
 
@@ -60,7 +60,7 @@ export const addResult = async (
 
       if (!cellRecord) {
         // Insert new canonical cell
-        const [cellId] = await knex("ConnectionsCellDef")
+        const [cellId] = await knex("connectionscelldef")
           .insert({ row: rowIndex, col: colIndex, color })
           .returning("id");
         cellRecord = { id: cellId };
@@ -68,7 +68,7 @@ export const addResult = async (
       }
 
       // Link the cell to the result
-      await knex("ConnectionsResultCell").insert({
+      await knex("connectionsresultcell").insert({
         result_id: resultId,
         cell_id: cellRecord.id,
       });
