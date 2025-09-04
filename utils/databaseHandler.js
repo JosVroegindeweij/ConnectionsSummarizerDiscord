@@ -29,7 +29,7 @@ export const addResult = async (
     guild.name,
   );
 
-  const [resultId] = await knex("connectionsresult")
+  const [resultIdObj] = await knex("connectionsresult")
     .insert({
       guild_id: guild.id,
       channel_id: channel.id,
@@ -38,47 +38,50 @@ export const addResult = async (
       puzzle_number: puzzleNumber,
     })
     .returning("id");
+  const resultId = resultIdObj.id;
 
   for (let rowIndex = 0; rowIndex < result.length; rowIndex++) {
     const row = result[rowIndex];
     for (let colIndex = 0; colIndex < row.length; colIndex++) {
       const color = row[colIndex];
 
-      // Check if canonical cell exists
       const cacheKey = `${rowIndex}-${colIndex}-${color}`;
-      let cellRecord = connectionsCellDefCache.get(cacheKey);
+      let cellId = connectionsCellDefCache.get(cacheKey);
 
-      if (!cellRecord) {
-        cellRecord = await knex("connectionscelldef")
+      if (!cellId) {
+        cellId = await knex("connectionscelldef")
           .where({ row: rowIndex, col: colIndex, color })
-          .first();
+          .first("id")
+          ?.id;
 
-        if (cellRecord) {
-          connectionsCellDefCache.set(cacheKey, cellRecord);
+        if (cellId) {
+          connectionsCellDefCache.set(cacheKey, cellId);
         }
       }
 
-      if (!cellRecord) {
-        // Insert new canonical cell
-        const [cellId] = await knex("connectionscelldef")
+      if (!cellId) {
+        const [cellIdObj] = await knex("connectionscelldef")
           .insert({ row: rowIndex, col: colIndex, color })
           .onConflict(["row", "col", "color"])
           .ignore()
           .returning("id");
-        if (cellId) {
-          cellRecord = { id: cellId };
+
+        if (cellIdObj) {
+          cellId = cellIdObj.id;
         } else {
-          cellRecord = await knex("connectionscelldef")
+          cellId = await knex("connectionscelldef")
             .where({ row: rowIndex, col: colIndex, color })
-            .first();
+            .first("id")
+            .id;
         }
-        connectionsCellDefCache.set(cacheKey, cellRecord);
+        connectionsCellDefCache.set(cacheKey, cellId);
       }
 
+      console.log(resultId, cellId);
       // Link the cell to the result
       await knex("connectionsresultcell").insert({
         result_id: resultId,
-        cell_id: cellRecord.id,
+        cell_id: cellId,
       });
     }
   }

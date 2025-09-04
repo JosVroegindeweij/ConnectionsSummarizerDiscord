@@ -54,9 +54,9 @@ export const execute = async (interaction) => {
       if (isResult) {
         totalRelevant++;
         addResult(
-          interaction.guild,
-          interaction.channel,
-          interaction.user,
+          msg.guild,
+          msg.channel,
+          msg.user,
           msg.createdTimestamp,
           puzzleNumber,
           result,
