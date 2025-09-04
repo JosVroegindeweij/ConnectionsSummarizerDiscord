@@ -1,13 +1,13 @@
-import { info, error } from "./logger";
-
+import { info, error } from "./logger.js";
+import knexConstructor from "knex";
 import {
   db_host,
   db_username,
   db_password,
   db_name,
-} from "../secrets/config.json";
+} from "../secrets/config.json" with { type: "json" };
 
-const knex = require("knex")({
+const knex = knexConstructor({
   client: "pg",
   connection: {
     host: db_host,
@@ -19,123 +19,66 @@ const knex = require("knex")({
   asyncStackTraces: true,
 });
 
-function saveChannels(guild, category, help, staff, ta_standings, linking) {
-  info(guild, " saving channels");
-  knex("channel")
+const connectionsCellDefCache = new Map();
+
+const addResult = async (
+  guild,
+  channel,
+  user,
+  timestamp,
+  puzzleNumber,
+  result,
+) => {
+  info(
+    `Adding result for user ${user.displayName} and puzzle ${puzzleNumber}`,
+    guild.name,
+  );
+
+  const [resultId] = await knex("ConnectionsResult")
     .insert({
-      guild: guild.id,
-      category: category.id,
-      help: help.id,
-      staff: staff.id,
-      ta_standings: ta_standings.id,
-      linking: linking.id,
+      guild_id: guild.id,
+      channel_id: channel.id,
+      user_id: user.id,
+      timestamp,
+      puzzle_number: puzzleNumber,
     })
-    .onConflict("guild")
-    .merge()
-    .then((_) => info("Saved (updated) channels to database", guild))
-    .catch((reason) => error(reason, guild));
-}
+    .returning("id");
 
-async function getChannels(guild) {
-  return (await knex("channel").where("guild", guild.id))[0];
-}
+  for (let rowIndex = 0; rowIndex < result.length; rowIndex++) {
+    const row = result[rowIndex];
+    for (let colIndex = 0; colIndex < row.length; colIndex++) {
+      const color = row[colIndex];
 
-function addAdmin(guild, type, admin) {
-  knex("admin")
-    .insert({
-      guild: guild.id,
-      type: type,
-      admin: admin.id,
-    })
-    .onConflict(["guild", "admin"])
-    .ignore()
-    .then((_) =>
-      info(
-        `Added ${type} ${admin?.displayName ?? admin.name} as admin to database`,
-        guild,
-      ),
-    )
-    .catch((reason) => error(reason, guild));
-}
+      // Check if canonical cell exists
+      const cacheKey = `${rowIndex}-${colIndex}-${color}`;
+      let cellRecord = connectionsCellDefCache.get(cacheKey);
 
-function getAdmins(guild) {
-  return knex("admin").where("guild", guild.id).select(["type", "admin"]);
-}
+      if (!cellRecord) {
+        cellRecord = await knex("ConnectionsCellDef")
+          .where({ row: rowIndex, col: colIndex, color })
+          .first();
 
-function addPlayerLink(guild, login, member) {
-  knex("player")
-    .insert({
-      guild: guild.id,
-      login: login,
-      discord_id: member.id,
-    })
-    .onConflict(["guild", "login"])
-    .merge()
-    .then((_) =>
-      info(
-        `Linked login '${login}' ` +
-          `to discord user ${member.user.username}#${member.user.tag}`,
-        guild,
-      ),
-    )
-    .catch((reason) => error(reason, guild));
-}
+        if (cellRecord) {
+          connectionsCellDefCache.set(cacheKey, cellRecord);
+        }
+      }
 
-function getPlayerLink(guild, columns) {
-  if (columns?.login) {
-    return knex("player").where({
-      guild: guild.id,
-      login: columns.login,
-    });
-  } else if (columns?.id) {
-    return knex("player").where({
-      guild: guild.id,
-      discord_id: columns.id,
-    });
-  } else {
-    return knex("player").select();
+      if (!cellRecord) {
+        // Insert new canonical cell
+        const [cellId] = await knex("ConnectionsCellDef")
+          .insert({ row: rowIndex, col: colIndex, color })
+          .returning("id");
+        cellRecord = { id: cellId };
+        connectionsCellDefCache.set(cacheKey, cellRecord);
+      }
+
+      // Link the cell to the result
+      await knex("ConnectionsResultCell").insert({
+        result_id: resultId,
+        cell_id: cellRecord.id,
+      });
+    }
   }
-}
-
-function removePlayerLink(guild, columns) {
-  return getPlayerLink(guild, columns).del();
-}
-
-function addSpreadsheetRange(guild, spreadsheet, name, range) {
-  knex("spreadsheet")
-    .insert({
-      guild: guild.id,
-      spreadsheet: spreadsheet,
-      name: name,
-      range: range,
-    })
-    .onConflict(["guild", "name"])
-    .merge()
-    .then((_) =>
-      info(
-        `Stored spreadsheet ` +
-          `'${spreadsheet}', name: '${name}', range: '${range}' to database.`,
-        guild,
-      ),
-    )
-    .catch((reason) => error(reason, guild));
-}
-
-function getSpreadsheetRange(guild, name) {
-  return knex("spreadsheet").where({
-    guild: guild.id,
-    name: name,
-  });
-}
-
-export {
-  saveChannels,
-  getChannels,
-  addAdmin,
-  getAdmins,
-  addPlayerLink,
-  getPlayerLink,
-  removePlayerLink,
-  addSpreadsheetRange,
-  getSpreadsheetRange,
 };
+
+export {};

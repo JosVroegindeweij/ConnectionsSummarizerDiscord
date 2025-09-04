@@ -1,5 +1,13 @@
 import { SlashCommandBuilder } from "discord.js";
 import { info } from "../../utils/logger.js";
+import { addResult } from "../../utils/databaseHandler.js";
+
+const colors = {
+  "🟩": 0,
+  "🟨": 1,
+  "🟦": 2,
+  "🟪": 3,
+};
 
 export const data = new SlashCommandBuilder()
   .setName("gather")
@@ -42,9 +50,17 @@ export const execute = async (interaction) => {
     );
 
     messages.forEach((msg) => {
-      if (isRelevant(msg)) {
-        console.log(msg.content);
+      const { isResult, puzzleNumber, result } = parseResult(msg.content);
+      if (isResult) {
         totalRelevant++;
+        addResult(
+          interaction.guild,
+          interaction.channel,
+          interaction.user,
+          msg.createdTimestamp,
+          puzzleNumber,
+          result,
+        );
       }
     });
 
@@ -56,24 +72,38 @@ export const execute = async (interaction) => {
     }
   } while (messages.size >= 5);
 
-  info(`Total gathered messages: ${totalGathered}. Total relevant messages: ${totalRelevant}`, interaction.guild.name);
+  info(
+    `Total gathered messages: ${totalGathered}. Total relevant messages: ${totalRelevant}`,
+    interaction.guild.name,
+  );
   await interaction.editReply(
     `Gathering complete! Gathered ${totalGathered} messages. Found ${totalRelevant} relevant messages!`,
   );
 };
 
-const isRelevant = (message) => {
+const parseResult = (message) => {
   if (!message.content) return false;
 
   const lines = message.content.split("\n");
   let rowCount = 0;
 
+  let puzzleNumber;
+  const result = [];
+
   for (const line of lines) {
-    const cleanLine = line.replace(/\s+/g, '');
+    if (line.startsWith("Puzzle #")) {
+      const match = line.match(/Puzzle #(\d+)/);
+      if (match) {
+        puzzleNumber = parseInt(match[1], 10);
+      }
+    }
+
+    const cleanLine = line.replace(/\s+/g, "");
     if (/[🟩🟨🟦🟪]{8}/.test(cleanLine)) {
+      result.push(Array.from(cleanLine).map((char) => colors[char]));
       rowCount++;
     }
   }
 
-  return rowCount >= 4 && rowCount <= 8;
+  return { isResult: rowCount >= 4 && rowCount <= 8, puzzleNumber, result };
 };
