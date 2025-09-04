@@ -1,19 +1,14 @@
 import { info, error } from "./logger.js";
 import knexConstructor from "knex";
-import {
-  db_host,
-  db_username,
-  db_password,
-  db_name,
-} from "../secrets/config.json" with { type: "json" };
+import config from "../secrets/config.json" with { type: "json" };
 
 const knex = knexConstructor({
   client: "pg",
   connection: {
-    host: db_host,
-    user: db_username,
-    password: db_password,
-    database: db_name,
+    host: config.db_host,
+    user: config.db_username,
+    password: config.db_password,
+    database: config.db_name,
   },
   debug: false,
   asyncStackTraces: true,
@@ -21,7 +16,7 @@ const knex = knexConstructor({
 
 const connectionsCellDefCache = new Map();
 
-const addResult = async (
+export const addResult = async (
   guild,
   channel,
   user,
