@@ -1,39 +1,31 @@
-CREATE TYPE adminenum AS ENUM('role', 'user');
-CREATE TABLE channel (
-    guild varchar(90) PRIMARY KEY,
-    category varchar(90) NOT NULL,
-    help varchar(90) NOT NULL,
-    staff varchar(90) NOT NULL,
-    ta_standings varchar(90) NOT NULL,
-    linking varchar(90) NOT NULL
+DROP TABLE IF EXISTS summarizer.ConnectionsResult CASCADE;
+DROP TABLE IF EXISTS summarizer.ConnectionsCellDef CASCADE;
+DROP TABLE IF EXISTS summarizer.ConnectionsResultCell CASCADE;
+
+CREATE TABLE ConnectionsResult (
+    id serial PRIMARY KEY,
+    guild_id varchar(90) NOT NULL,
+    channel_id varchar(90) NOT NULL,
+    user_id varchar(90) NOT NULL,
+    puzzle_number int,
+    submitted_at timestamptz NOT NULL
 );
-CREATE TABLE admin (
-    guild varchar(90) NOT NULL,
-    type adminenum NOT NULL,
-    admin varchar(90) NOT NULL,
-    PRIMARY KEY(guild, admin)
+
+CREATE TABLE ConnectionsCellDef (
+    id serial PRIMARY KEY,
+    row int NOT NULL,
+    col int NOT NULL,
+    color int NOT NULL,
+    UNIQUE (row, col, color)
 );
-CREATE TABLE spreadsheet (
-    guild varchar(90) NOT NULL,
-    spreadsheet varchar(255) NOT NULL,
-    name varchar(90) NOT NULL,
-    range varchar(90) NOT NULL,
-    PRIMARY KEY(guild, name)
+
+CREATE TABLE ConnectionsResultCell (
+    result_id int NOT NULL REFERENCES ConnectionsResult(id) ON DELETE CASCADE,
+    cell_id int NOT NULL REFERENCES ConnectionsCellDef(id) ON DELETE CASCADE,
+    PRIMARY KEY (result_id, cell_id)
 );
-CREATE TABLE player (
-    guild varchar(90) NOT NULL,
-    login varchar(90) NOT NULL,
-    discord_id varchar(90) NOT NULL,
-    PRIMARY KEY(guild, login)
-);
-CREATE TABLE match (
-    guild varchar(90) PRIMARY KEY,
-    match varchar(90) NOT NULL,
-    round varchar(90) NOT NULL,
-    seed1 varchar(90) NOT NULL,
-    seed2 varchar(90) NOT NULL,
-    seed3 varchar(90) NOT NULL,
-    seed4 varchar(90) NOT NULL,
-    role varchar(90) NOT NULL,
-    channel varchar(90) NOT NULL
-)
+
+CREATE INDEX idx_ConnectionsCellDef_rowcol ON ConnectionsCellDef(row, col);
+CREATE INDEX idx_ConnectionsCellDef_color ON ConnectionsCellDef(color);
+CREATE INDEX idx_ConnectionsResult_user ON ConnectionsResult(user_id);
+CREATE INDEX idx_ConnectionsResult_puzzle ON ConnectionsResult(puzzle_number); 
