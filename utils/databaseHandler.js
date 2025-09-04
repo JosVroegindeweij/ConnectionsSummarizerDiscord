@@ -62,8 +62,16 @@ export const addResult = async (
         // Insert new canonical cell
         const [cellId] = await knex("connectionscelldef")
           .insert({ row: rowIndex, col: colIndex, color })
+          .onConflict(["row", "col", "color"])
+          .ignore()
           .returning("id");
-        cellRecord = { id: cellId };
+        if (cellId) {
+          cellRecord = { id: cellId };
+        } else {
+          cellRecord = await knex("connectionscelldef")
+            .where({ row: rowIndex, col: colIndex, color })
+            .first();
+        }
         connectionsCellDefCache.set(cacheKey, cellRecord);
       }
 
@@ -75,5 +83,3 @@ export const addResult = async (
     }
   }
 };
-
-export {};
