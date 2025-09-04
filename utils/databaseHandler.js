@@ -49,7 +49,16 @@ export const addResult = async (
       timestamp,
       puzzle_number: puzzleNumber,
     })
+    .onConflict(["user_id", "puzzle_number"])
+    .ignore()
     .returning("id");
+  if (!resultIdObj) {
+    info(
+      `Result for user ${user.displayName} and puzzle ${puzzleNumber} already exists, skipping.`,
+      guild.name,
+    );
+    return;
+  }
   const resultId = resultIdObj.id;
 
   for (let rowIndex = 0; rowIndex < result.length; rowIndex++) {
@@ -95,5 +104,61 @@ export const addResult = async (
         cell_id: cellId,
       });
     }
+  }
+};
+
+export const addMonitoredChannel = async (guild, channel) => {
+  try {
+    await knex("monitoredchannels")
+      .insert({
+        guild_id: guild.id,
+        channel_id: channel.id,
+        created_at: Date.now(),
+      })
+      .onConflict(["channel_id"])
+      .ignore();
+  } catch (err) {
+    error(`Error adding monitored channel: ${err}`, guild.name);
+    throw err;
+  }
+};
+
+export const removeMonitoredChannel = async (guild, channel) => {
+  try {
+    await knex("monitoredchannels")
+      .where({
+        guild_id: guild.id,
+        channel_id: channel.id,
+      })
+      .del();
+  } catch (err) {
+    error(`Error removing monitored channel: ${err}`, guild.name);
+    throw err;
+  }
+};
+
+export const getMonitoredChannels = async (guild) => {
+  try {
+    return await knex("monitoredchannels")
+      .where({ guild_id: guild.id })
+      .select("channel_id");
+  } catch (err) {
+    error(`Error getting monitored channels: ${err}`, guild.name);
+    throw err;
+  }
+};
+
+export const isChannelMonitored = async (guild, channel) => {
+  try {
+    const result = await knex("monitoredchannels")
+      .where({
+        guild_id: guild.id,
+        channel_id: channel.id,
+      })
+      .first();
+    return !!result;
+  } catch (err) {
+    error(`Error checking if channel is monitored: ${err}`, guild.name);
+    return false; // Fail safely - don't monitor if we can't check
   }
 };

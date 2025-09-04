@@ -1,6 +1,8 @@
 DROP TABLE IF EXISTS summarizer.ConnectionsResult CASCADE;
 DROP TABLE IF EXISTS summarizer.ConnectionsCellDef CASCADE;
 DROP TABLE IF EXISTS summarizer.ConnectionsResultCell CASCADE;
+DROP TABLE IF EXISTS summarizer.GatherState CASCADE;
+DROP TABLE IF EXISTS summarizer.MonitoredChannels CASCADE;
 
 CREATE TABLE ConnectionsResult (
     id serial PRIMARY KEY,
@@ -29,3 +31,24 @@ CREATE INDEX idx_ConnectionsCellDef_rowcol ON ConnectionsCellDef(row, col);
 CREATE INDEX idx_ConnectionsCellDef_color ON ConnectionsCellDef(color);
 CREATE INDEX idx_ConnectionsResult_user ON ConnectionsResult(user_id);
 CREATE INDEX idx_ConnectionsResult_puzzle ON ConnectionsResult(puzzle_number); 
+
+CREATE TABLE GatherState (
+    id serial PRIMARY KEY,
+    guild_id varchar(90) NOT NULL,
+    channel_id varchar(90) NOT NULL,
+    last_message_id varchar(90) NOT NULL,
+    timestamp bigint NOT NULL,
+    UNIQUE (channel_id)
+);
+
+CREATE TABLE MonitoredChannels (
+    id serial PRIMARY KEY,
+    guild_id varchar(90) NOT NULL,
+    channel_id varchar(90) NOT NULL,
+    created_at bigint NOT NULL,
+    UNIQUE (channel_id)
+);
+
+CREATE INDEX idx_GatherState_channel ON GatherState(channel_id);
+CREATE INDEX idx_MonitoredChannels_guild ON MonitoredChannels(guild_id);
+CREATE INDEX idx_MonitoredChannels_channel ON MonitoredChannels(channel_id);

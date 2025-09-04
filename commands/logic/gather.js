@@ -4,13 +4,7 @@ import {
   addResult,
   setLastGatheredMessageId,
 } from "../../utils/databaseHandler.js";
-
-const colors = {
-  "🟩": 0,
-  "🟨": 1,
-  "🟦": 2,
-  "🟪": 3,
-};
+import { parseConnectionsResult } from "../../utils/connectionsParser.js";
 
 export const data = new SlashCommandBuilder()
   .setName("gather")
@@ -53,7 +47,7 @@ export const execute = async (interaction) => {
     );
 
     messages.forEach((msg) => {
-      const { isResult, puzzleNumber, result } = parseResult(msg.content);
+      const { isResult, puzzleNumber, result } = parseConnectionsResult(msg.content);
       if (isResult) {
         totalRelevant++;
         addResult(
@@ -91,31 +85,4 @@ export const execute = async (interaction) => {
   await interaction.editReply(
     `Gathering complete! Gathered ${totalGathered} messages. Found ${totalRelevant} relevant messages!`,
   );
-};
-
-const parseResult = (messageContent) => {
-  if (!messageContent) return false;
-
-  const lines = messageContent.split("\n");
-  let rowCount = 0;
-
-  let puzzleNumber;
-  const result = [];
-
-  for (const line of lines) {
-    if (line.startsWith("Puzzle #")) {
-      const match = line.match(/Puzzle #(\d+)/);
-      if (match) {
-        puzzleNumber = parseInt(match[1], 10);
-      }
-    }
-
-    const cleanLine = line.replace(/\s+/g, "");
-    if (/[🟩🟨🟦🟪]{8}/.test(cleanLine)) {
-      result.push(Array.from(cleanLine).map((char) => colors[char]));
-      rowCount++;
-    }
-  }
-
-  return { isResult: rowCount >= 4 && rowCount <= 8, puzzleNumber, result };
 };

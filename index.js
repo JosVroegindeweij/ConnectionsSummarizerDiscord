@@ -1,7 +1,9 @@
-import { Client, Events, GatewayIntentBits } from "discord.js";
+import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
 
 import { info, error } from "./utils/logger.js";
 import { initCommands } from "./utils/commandHandler.js";
+import { parseConnectionsResult } from "./utils/connectionsParser.js";
+import { isChannelMonitored, addResult } from "./utils/databaseHandler.js";
 
 import config from "./secrets/config.json" with { type: "json" };
 
@@ -45,6 +47,53 @@ client.on(Events.InteractionCreate, async (interaction) => {
         flags: MessageFlags.Ephemeral,
       });
     }
+  }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+  // Ignore messages from bots (including ourselves)
+  if (message.author.bot) return;
+
+  // Skip if not in a guild (DM messages)
+  if (!message.guild) return;
+
+  try {
+    // Check if this channel is being monitored
+    const isMonitored = await isChannelMonitored(
+      message.guild,
+      message.channel,
+    );
+    if (!isMonitored) return;
+
+    // Parse the message content to see if it's a valid connections result
+    const { isResult, puzzleNumber, result } = parseConnectionsResult(
+      message.content,
+    );
+
+    if (isResult) {
+      // Add the result to the database
+      await addResult(
+        message.guild,
+        message.channel,
+        message.author,
+        message.createdTimestamp,
+        puzzleNumber,
+        result,
+      );
+
+      // React with a checkmark to indicate we've processed this message
+      await message.react("✅");
+
+      info(
+        `Automatically processed connections result from ${message.author.displayName} for puzzle ${puzzleNumber}`,
+        message.guild.name,
+      );
+    }
+  } catch (err) {
+    error(
+      `Error processing message in monitored channel: ${err}`,
+      message.guild?.name || "Unknown Guild",
+    );
   }
 });
 
