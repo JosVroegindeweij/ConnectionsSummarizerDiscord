@@ -24,7 +24,7 @@ export const setLastGatheredMessageId = async (guild, channel, messageId) => {
       last_message_id: messageId,
       timestamp: Date.now(),
     })
-    .onConflict(["guild_id", "channel_id"])
+    .onConflict(["channel_id"])
     .merge();
 };
 

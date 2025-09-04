@@ -67,8 +67,16 @@ export const execute = async (interaction) => {
       }
     });
 
-    fromMessageOn = messages.first()?.id;
-    setLastGatheredMessageId(msg.guild, msg.channel, fromMessageOn);
+    const lastMessage = messages.first();
+    if (lastMessage) {
+      fromMessageOn = lastMessage.id;
+      setLastGatheredMessageId(
+        lastMessage.guild,
+        lastMessage.channel,
+        fromMessageOn,
+      );
+    }
+
     if (totalGathered % 20 === 0) {
       await interaction.editReply(
         `Gathered ${totalGathered} messages so far. Found ${totalRelevant} relevant messages!`,
