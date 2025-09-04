@@ -18,7 +18,7 @@ const connectionsCellDefCache = new Map();
 
 export const addResult = async (
   guild,
-  channel
+  channel,
   user,
   timestamp,
   puzzleNumber,
