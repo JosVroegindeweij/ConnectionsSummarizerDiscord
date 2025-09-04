@@ -81,10 +81,10 @@ export const execute = async (interaction) => {
   );
 };
 
-const parseResult = (message) => {
-  if (!message.content) return false;
+const parseResult = (messageContent) => {
+  if (!messageContent) return false;
 
-  const lines = message.content.split("\n");
+  const lines = messageContent.split("\n");
   let rowCount = 0;
 
   let puzzleNumber;
