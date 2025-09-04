@@ -56,7 +56,7 @@ export const execute = async (interaction) => {
         addResult(
           msg.guild,
           msg.channel,
-          msg.user,
+          msg.author,
           msg.createdTimestamp,
           puzzleNumber,
           result,
