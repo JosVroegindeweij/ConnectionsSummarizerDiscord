@@ -16,6 +16,18 @@ const knex = knexConstructor({
 
 const connectionsCellDefCache = new Map();
 
+export const setLastGatheredMessageId = async (guild, channel, messageId) => {
+  await knex("gatherstate")
+    .insert({
+      guild_id: guild.id,
+      channel_id: channel.id,
+      last_message_id: messageId,
+      timestamp: Date.now(),
+    })
+    .onConflict(["guild_id", "channel_id"])
+    .merge();
+};
+
 export const addResult = async (
   guild,
   channel,
@@ -77,7 +89,6 @@ export const addResult = async (
         connectionsCellDefCache.set(cacheKey, cellId);
       }
 
-      console.log(resultId, cellId);
       // Link the cell to the result
       await knex("connectionsresultcell").insert({
         result_id: resultId,

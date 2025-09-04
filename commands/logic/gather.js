@@ -1,6 +1,9 @@
 import { SlashCommandBuilder } from "discord.js";
 import { info } from "../../utils/logger.js";
-import { addResult } from "../../utils/databaseHandler.js";
+import {
+  addResult,
+  setLastGatheredMessageId,
+} from "../../utils/databaseHandler.js";
 
 const colors = {
   "🟩": 0,
@@ -65,6 +68,7 @@ export const execute = async (interaction) => {
     });
 
     fromMessageOn = messages.first()?.id;
+    setLastGatheredMessageId(msg.guild, msg.channel, fromMessageOn);
     if (totalGathered % 20 === 0) {
       await interaction.editReply(
         `Gathered ${totalGathered} messages so far. Found ${totalRelevant} relevant messages!`,
