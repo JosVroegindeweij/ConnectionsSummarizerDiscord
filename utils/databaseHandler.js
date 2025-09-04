@@ -49,10 +49,10 @@ export const addResult = async (
       let cellId = connectionsCellDefCache.get(cacheKey);
 
       if (!cellId) {
-        cellId = await knex("connectionscelldef")
+        const existingCell = await knex("connectionscelldef")
           .where({ row: rowIndex, col: colIndex, color })
-          .first("id")
-          ?.id;
+          .first("id");
+        cellId = existingCell?.id;
 
         if (cellId) {
           connectionsCellDefCache.set(cacheKey, cellId);
@@ -69,10 +69,10 @@ export const addResult = async (
         if (cellIdObj) {
           cellId = cellIdObj.id;
         } else {
-          cellId = await knex("connectionscelldef")
+          const existingCell = await knex("connectionscelldef")
             .where({ row: rowIndex, col: colIndex, color })
-            .first("id")
-            .id;
+            .first("id");
+          cellId = existingCell?.id;
         }
         connectionsCellDefCache.set(cacheKey, cellId);
       }

@@ -8,7 +8,7 @@ CREATE TABLE ConnectionsResult (
     channel_id varchar(90) NOT NULL,
     user_id varchar(90) NOT NULL,
     puzzle_number int,
-    submitted_at timestamptz NOT NULL
+    timestamp bigint NOT NULL
 );
 
 CREATE TABLE ConnectionsCellDef (
