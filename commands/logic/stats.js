@@ -89,8 +89,6 @@ async function displayGlobalStats(interaction) {
       );
     };
 
-    // Add ranking fields in two columns
-    // Left column
     if (stats.topActivePlayers && stats.topActivePlayers.length > 0) {
       embed.addFields({
         name: "🏆 Most Active Players",
@@ -108,6 +106,18 @@ async function displayGlobalStats(interaction) {
         value: formatRankingList(
           stats.topWinRates,
           (player) =>
+            `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`,
+        ),
+        inline: true,
+      });
+    }
+
+    if (stats.worstWinRates && stats.worstWinRates.length > 0) {
+      embed.addFields({
+        name: "📉 Worst Win Rates",
+        value: formatRankingList(
+          stats.worstWinRates,
+          (player) =>
             `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}%`,
         ),
         inline: true,
@@ -117,7 +127,6 @@ async function displayGlobalStats(interaction) {
     // Add invisible field for spacing (creates a new row)
     embed.addFields({ name: "\u200B", value: "\u200B", inline: false });
 
-    // Right column
     if (stats.topWinners && stats.topWinners.length > 0) {
       embed.addFields({
         name: "🎖️ Top Winners",
@@ -140,33 +149,6 @@ async function displayGlobalStats(interaction) {
       });
     }
 
-    // Add invisible field for spacing (creates a new row)
-    embed.addFields({ name: "\u200B", value: "\u200B", inline: false });
-
-    // Third column - new statistics
-    if (stats.worstWinRates && stats.worstWinRates.length > 0) {
-      embed.addFields({
-        name: "📉 Worst Win Rates",
-        value: formatRankingList(
-          stats.worstWinRates,
-          (player) =>
-            `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}%`,
-        ),
-        inline: true,
-      });
-    }
-
-    if (stats.topWinRatesMinGames && stats.topWinRatesMinGames.length > 0) {
-      embed.addFields({
-        name: "⭐ Best Win Rates (10+ games)",
-        value: formatRankingList(
-          stats.topWinRatesMinGames,
-          (player) =>
-            `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`,
-        ),
-        inline: true,
-      });
-    }
     await interaction.reply({ embeds: [embed] });
   } catch (err) {
     error(
