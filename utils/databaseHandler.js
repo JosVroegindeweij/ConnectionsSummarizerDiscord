@@ -297,12 +297,19 @@ const getWorstWinRates = (winsByPuzzle) => {
     .mapValues((byPuzzle) => {
       const values = _.values(byPuzzle);
       const totalGames = values.length;
-      return _.filter(values, Boolean).length / totalGames;
+      return {
+        totalGames,
+        winRate: _.filter(values, Boolean).length / totalGames,
+      };
     })
     .toPairs()
     .orderBy([1], ["asc"]) // ascending order for worst rates
     .take(3)
-    .map(([userId, winRate]) => ({ userId, winRate, totalGames }))
+    .map(([userId, { winRate, totalGames }]) => ({
+      userId,
+      winRate,
+      totalGames,
+    }))
     .value();
 };
 
