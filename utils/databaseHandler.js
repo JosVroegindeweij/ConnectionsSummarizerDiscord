@@ -210,6 +210,8 @@ export const getGlobalStats = async (guild) => {
     const topWinners = getTopWinners(winsPerPuzzlePerUser);
     const topWinRates = getTopWinRates(winsPerPuzzlePerUser);
     const topWinStreaks = getTopWinStreaks(winsPerPuzzlePerUser);
+    const worstWinRates = getWorstWinRates(winsPerPuzzlePerUser);
+    const topWinRatesMinGames = getTopWinRatesMinGames(winsPerPuzzlePerUser, 10);
 
     return {
       totalResults: totalResults?.count,
@@ -218,6 +220,8 @@ export const getGlobalStats = async (guild) => {
       topWinners,
       topWinRates,
       topWinStreaks,
+      worstWinRates,
+      topWinRatesMinGames,
     };
   } catch (err) {
     error(`Error getting global stats: ${err}`, guild.name);
@@ -231,7 +235,7 @@ const getTopWinners = (winsByPuzzle) => {
     .toPairs()
     .orderBy([1], ["desc"])
     .take(3)
-    .map(0)
+    .map(([userId, wins]) => ({ userId, wins }))
     .value();
 };
 
@@ -244,13 +248,18 @@ const getTopWinRates = (winsByPuzzle) => {
     .toPairs()
     .orderBy([1], ["desc"])
     .take(3)
-    .map(0)
+    .map(([userId, winRate]) => ({ userId, winRate }))
     .value();
 };
 
 const getTopWinStreaks = (winsByPuzzle) => {
   const winStreaks = _.mapValues(winsByPuzzle, getLongestWinStreak);
-  return _(winStreaks).toPairs().orderBy([1], ["desc"]).take(3).map(0).value();
+  return _(winStreaks)
+    .toPairs()
+    .orderBy([1], ["desc"])
+    .take(3)
+    .map(([userId, winStreak]) => ({ userId, winStreak }))
+    .value();
 };
 
 const getLongestWinStreak = (puzzles) => {
@@ -274,6 +283,35 @@ const getLongestWinStreak = (puzzles) => {
     },
     { longestStreak: 0, currentStreak: 0 },
   ).longestStreak;
+};
+
+const getWorstWinRates = (winsByPuzzle) => {
+  return _(winsByPuzzle)
+    .mapValues((byPuzzle) => {
+      const values = _.values(byPuzzle);
+      return _.filter(values, Boolean).length / values.length;
+    })
+    .toPairs()
+    .orderBy([1], ["asc"]) // ascending order for worst rates
+    .take(3)
+    .map(([userId, winRate]) => ({ userId, winRate }))
+    .value();
+};
+
+const getTopWinRatesMinGames = (winsByPuzzle, minGames = 10) => {
+  return _(winsByPuzzle)
+    .mapValues((byPuzzle) => {
+      const values = _.values(byPuzzle);
+      const totalGames = values.length;
+      const winRate = _.filter(values, Boolean).length / totalGames;
+      return { winRate, totalGames };
+    })
+    .toPairs()
+    .filter(([userId, stats]) => stats.totalGames >= minGames)
+    .orderBy([1, 'winRate'], ["desc"])
+    .take(3)
+    .map(([userId, stats]) => ({ userId, winRate: stats.winRate, totalGames: stats.totalGames }))
+    .value();
 };
 
 const getAllResults = async (guild) => {

@@ -78,7 +78,10 @@ async function displayGlobalStats(interaction) {
     embed.setDescription(description);
 
     // Helper function to format ranking list
-    const formatRankingList = (items, formatter = (item) => `<@${item}>`) => {
+    const formatRankingList = (
+      items,
+      formatter = (item) => `<@${item.userId || item}>`,
+    ) => {
       return (
         items
           .map((item, index) => `${medals[index]} ${formatter(item)}`)
@@ -102,7 +105,11 @@ async function displayGlobalStats(interaction) {
     if (stats.topWinRates && stats.topWinRates.length > 0) {
       embed.addFields({
         name: "📈 Best Win Rates",
-        value: formatRankingList(stats.topWinRates),
+        value: formatRankingList(
+          stats.topWinRates,
+          (player) =>
+            `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}%`,
+        ),
         inline: true,
       });
     }
@@ -114,7 +121,10 @@ async function displayGlobalStats(interaction) {
     if (stats.topWinners && stats.topWinners.length > 0) {
       embed.addFields({
         name: "🎖️ Top Winners",
-        value: formatRankingList(stats.topWinners),
+        value: formatRankingList(
+          stats.topWinners,
+          (player) => `<@${player.userId}> - ${player.wins} wins`,
+        ),
         inline: true,
       });
     }
@@ -122,7 +132,38 @@ async function displayGlobalStats(interaction) {
     if (stats.topWinStreaks && stats.topWinStreaks.length > 0) {
       embed.addFields({
         name: "🔥 Longest Win Streaks",
-        value: formatRankingList(stats.topWinStreaks),
+        value: formatRankingList(
+          stats.topWinStreaks,
+          (player) => `<@${player.userId}> - ${player.winStreak} streak`,
+        ),
+        inline: true,
+      });
+    }
+
+    // Add invisible field for spacing (creates a new row)
+    embed.addFields({ name: "\u200B", value: "\u200B", inline: false });
+
+    // Third column - new statistics
+    if (stats.worstWinRates && stats.worstWinRates.length > 0) {
+      embed.addFields({
+        name: "📉 Worst Win Rates",
+        value: formatRankingList(
+          stats.worstWinRates,
+          (player) =>
+            `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}%`,
+        ),
+        inline: true,
+      });
+    }
+
+    if (stats.topWinRatesMinGames && stats.topWinRatesMinGames.length > 0) {
+      embed.addFields({
+        name: "⭐ Best Win Rates (10+ games)",
+        value: formatRankingList(
+          stats.topWinRatesMinGames,
+          (player) =>
+            `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`,
+        ),
         inline: true,
       });
     }
