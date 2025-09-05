@@ -200,11 +200,10 @@ export const getGlobalStats = async (guild) => {
     const winsPerPuzzlePerUser = _.mapValues(
       resultsPerPuzzlePerUser,
       (resultByPuzzle) =>
-        _.mapValues(
-          resultByPuzzle,
-          (result) =>
-            result.length < 7 ||
-            result[6].some((cell) => cell.color !== result[6][0].color),
+        _.mapValues(resultByPuzzle, (result) =>
+          result[result.length - 1].some(
+            (cell) => cell.color !== result[result.length - 1][0].color,
+          ),
         ),
     );
     const topWinners = getTopWinners(winsPerPuzzlePerUser);
