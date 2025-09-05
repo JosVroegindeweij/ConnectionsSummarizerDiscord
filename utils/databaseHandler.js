@@ -211,10 +211,6 @@ export const getGlobalStats = async (guild) => {
     const topWinRates = getTopWinRates(winsPerPuzzlePerUser);
     const topWinStreaks = getTopWinStreaks(winsPerPuzzlePerUser);
     const worstWinRates = getWorstWinRates(winsPerPuzzlePerUser);
-    const topWinRatesMinGames = getTopWinRatesMinGames(
-      winsPerPuzzlePerUser,
-      10,
-    );
 
     return {
       totalResults: totalResults?.count,
