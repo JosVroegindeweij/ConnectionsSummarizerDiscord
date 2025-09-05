@@ -201,7 +201,8 @@ export const getGlobalStats = async (guild) => {
       resultsPerPuzzlePerUser,
       (resultByPuzzle) =>
         _.mapValues(resultByPuzzle, (result) =>
-          result[result.length - 1].some(
+          _.every(
+            result[result.length - 1],
             (cell) => cell.color !== result[result.length - 1][0].color,
           ),
         ),
