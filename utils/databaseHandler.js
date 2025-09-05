@@ -1,6 +1,7 @@
 import { info, error } from "./logger.js";
 import knexConstructor from "knex";
 import config from "../secrets/config.json" with { type: "json" };
+import _ from "lodash";
 
 const knex = knexConstructor({
   client: "pg",
@@ -191,35 +192,32 @@ export const getGlobalStats = async (guild) => {
 
     const resultsPerPuzzlePerUser = getAllResults(guild);
 
-    const winsPerPuzzlePerUser = resultsPerPuzzlePerUser.mapValues(
+    const topActivePlayers = _.map(mostActivePlayers, (p) => ({
+      userId: p.user_id,
+      count: parseInt(p.count),
+    }));
+
+    const winsPerPuzzlePerUser = _.mapValues(
+      resultsPerPuzzlePerUser,
       (resultByPuzzle) =>
-        resultByPuzzle.mapValues(
+        _.mapValues(
+          resultByPuzzle,
           (result) =>
             result.length < 7 ||
             result[6].some((cell) => cell.color !== result[6][0].color),
         ),
     );
-
-    const topActivePlayers = mostActivePlayers.map((p) => ({
-      userId: p.user_id,
-      count: parseInt(p.count),
-    }));
     const topWinners = getTopWinners(winsPerPuzzlePerUser);
     const topWinRates = getTopWinRates(winsPerPuzzlePerUser);
     const topWinStreaks = getTopWinStreaks(winsPerPuzzlePerUser);
 
-    // For win rate and win streak, we need to analyze the result patterns
-    // A "win" is typically when someone solves the puzzle (completes all 4 groups)
-    // This requires analyzing the ConnectionsResultCell data to count completed groups
-    const playerStats = await getPlayerWinStats(guild);
-
     return {
       totalResults: totalResults?.count,
       uniquePlayers: uniquePlayers?.count,
-      topActivePlayers: topActivePlayers,
-      topWinners: topWinners,
-      topWinRates: topWinRates,
-      topWinStreaks: topWinStreaks,
+      topActivePlayers,
+      topWinners,
+      topWinRates,
+      topWinStreaks,
     };
   } catch (err) {
     error(`Error getting global stats: ${err}`, guild.name);
@@ -228,55 +226,54 @@ export const getGlobalStats = async (guild) => {
 };
 
 const getTopWinners = (winsByPuzzle) => {
-  const winsPerUser = winsByPuzzle.mapValues(
-    (byPuzzle) => Object.values(byPuzzle).filter((isWin) => isWin).length,
-  );
-  return Object.entries(winsPerUser)
-    .sort(([, v1], [, v2]) => v2 - v1)
-    .slice(0, 3)
-    .map(([k]) => k);
+  return _(winsByPuzzle)
+    .mapValues((byPuzzle) => _.filter(byPuzzle, Boolean).length)
+    .toPairs()
+    .orderBy([1], ["desc"])
+    .take(3)
+    .map(0)
+    .value();
 };
 
 const getTopWinRates = (winsByPuzzle) => {
-  const percPerUser = winsByPuzzle.mapValues(
-    (byPuzzle) =>
-      Object.values(byPuzzle).filter((isWin) => isWin).length /
-      Object.values(byPuzzle).length,
-  );
-  return Object.entries(percPerUser)
-    .sort(([, v1], [, v2]) => v2 - v1)
-    .slice(0, 3)
-    .map(([k]) => k);
+  return _(winsByPuzzle)
+    .mapValues((byPuzzle) => {
+      const values = _.values(byPuzzle);
+      return _.filter(values, Boolean).length / values.length;
+    })
+    .toPairs()
+    .orderBy([1], ["desc"])
+    .take(3)
+    .map(0)
+    .value();
 };
 
 const getTopWinStreaks = (winsByPuzzle) => {
-  const winStreaks = {};
-  for (const [userId, puzzles] of Object.entries(winsByPuzzle)) {
-    winStreaks[userId] = getLongestWinStreak(puzzles);
-  }
-  return Object.entries(winStreaks)
-    .sort(([, v1], [, v2]) => v2 - v1)
-    .slice(0, 3)
-    .map(([k]) => k);
+  const winStreaks = _.mapValues(winsByPuzzle, getLongestWinStreak);
+  return _(winStreaks).toPairs().orderBy([1], ["desc"]).take(3).map(0).value();
 };
 
 const getLongestWinStreak = (puzzles) => {
-  let longestStreak = 0;
-  let currentStreak = 0;
-  const puzzleNumbers = Object.keys(puzzles)
+  const puzzleNumbers = _(puzzles)
+    .keys()
     .map((n) => parseInt(n, 10))
-    .sort((a, b) => a - b);
+    .sortBy()
+    .value();
 
-  for (const puzzleNum of puzzleNumbers) {
-    const isWin = puzzles[puzzleNum];
-    if (isWin) {
-      currentStreak++;
-      longestStreak = Math.max(longestStreak, currentStreak);
-    } else {
-      currentStreak = 0;
-    }
-  }
-  return longestStreak;
+  return _.reduce(
+    puzzleNumbers,
+    (acc, puzzleNum) => {
+      const isWin = puzzles[puzzleNum];
+      if (isWin) {
+        acc.currentStreak++;
+        acc.longestStreak = Math.max(acc.longestStreak, acc.currentStreak);
+      } else {
+        acc.currentStreak = 0;
+      }
+      return acc;
+    },
+    { longestStreak: 0, currentStreak: 0 },
+  ).longestStreak;
 };
 
 const getAllResults = async (guild) => {
@@ -297,21 +294,22 @@ const getAllResults = async (guild) => {
       )
       .orderBy(["cr.user_id", "cr.timestamp", "ccd.row", "ccd.col"]);
 
-    const results = {};
-
-    for (const resultRow of rawResults) {
-      const { user_id, puzzle_number, row, col, color } = resultRow;
-
-      if (!results[user_id]) results[user_id] = {};
-      if (!results[user_id][puzzle_number])
-        results[user_id][puzzle_number] = [];
-
-      const grid = results[user_id][puzzle_number];
-
-      if (!grid[row]) grid[row] = new Array(4).fill(null);
-      grid[row][col] = color;
-    }
-    return results;
+    return _(rawResults)
+      .groupBy("user_id")
+      .mapValues((userResults) =>
+        _(userResults)
+          .groupBy("puzzle_number")
+          .mapValues((puzzleResults) => {
+            const grid = [];
+            _.forEach(puzzleResults, ({ row, col, color }) => {
+              if (!grid[row]) grid[row] = new Array(4).fill(null);
+              grid[row][col] = color;
+            });
+            return grid;
+          })
+          .value(),
+      )
+      .value();
   } catch (err) {
     error(`Error getting all results: ${err}`, guild.name);
     return {};
