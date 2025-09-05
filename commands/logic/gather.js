@@ -15,15 +15,17 @@ export const data = new SlashCommandBuilder()
       .setDescription("The channel to gather messages from")
       .setRequired(true),
   )
-  .addStringOption(
-    (option) =>
-      option
-        .setName("startingfrommessageid")
-        .setDescription("Start looking after this message")
-        .setRequired(true), // Later false when this gets retrieved from the db
+  .addStringOption((option) =>
+    option
+      .setName("startingfrommessageid")
+      .setDescription("Start looking after this message")
+      .setRequired(true),
   );
 
 export const execute = async (interaction) => {
+  if (interaction.author.id !== "257495886844657684")
+    await interaction.reply("You do not have permission to use this command!");
+
   await interaction.reply("Gathering started!");
 
   const fromChannel = interaction.options.getChannel("channel");
@@ -37,7 +39,7 @@ export const execute = async (interaction) => {
   do {
     messages = await fromChannel.messages.fetch({
       after: fromMessageOn,
-      limit: 5,
+      limit: 100,
       cache: false,
     });
     totalGathered += messages.size;
@@ -47,7 +49,9 @@ export const execute = async (interaction) => {
     );
 
     messages.forEach((msg) => {
-      const { isResult, puzzleNumber, result } = parseConnectionsResult(msg.content);
+      const { isResult, puzzleNumber, result } = parseConnectionsResult(
+        msg.content,
+      );
       if (isResult) {
         totalRelevant++;
         addResult(
@@ -71,12 +75,12 @@ export const execute = async (interaction) => {
       );
     }
 
-    if (totalGathered % 20 === 0) {
+    if (totalGathered % 500 === 0) {
       await interaction.editReply(
         `Gathered ${totalGathered} messages so far. Found ${totalRelevant} relevant messages!`,
       );
     }
-  } while (messages.size >= 5);
+  } while (messages.size >= 100);
 
   info(
     `Total gathered messages: ${totalGathered}. Total relevant messages: ${totalRelevant}`,
