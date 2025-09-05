@@ -30,6 +30,8 @@ export async function execute(interaction) {
   }
 }
 
+const medals = ["🥇", "🥈", "🥉"];
+
 async function displayGlobalStats(interaction) {
   try {
     const stats = await getGlobalStats(interaction.guild);
@@ -68,52 +70,62 @@ async function displayGlobalStats(interaction) {
       return;
     }
 
-    // Build the description with all stats
+    // Build the description with basic stats
     let description = `**📈 Server-wide Connections Statistics**\n\n`;
-
     description += `🎯 **Total Results Shared:** ${stats.totalResults}\n`;
-    description += `👥 **Unique Players:** ${stats.uniquePlayers}\n\n`;
-
-    // Top Active Players
-    if (stats.topActivePlayers && stats.topActivePlayers.length > 0) {
-      description += `🏆 **Most Active Players:**\n`;
-      stats.topActivePlayers.forEach((player, index) => {
-        const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
-        description += `${medal} <@${player.userId}> - ${player.count} results\n`;
-      });
-      description += `\n`;
-    }
-
-    // Top Winners
-    if (stats.topWinners && stats.topWinners.length > 0) {
-      description += `🎖️ **Top Winners:**\n`;
-      stats.topWinners.forEach((userId, index) => {
-        const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
-        description += `${medal} <@${userId}>\n`;
-      });
-      description += `\n`;
-    }
-
-    // Top Win Rates
-    if (stats.topWinRates && stats.topWinRates.length > 0) {
-      description += `📈 **Best Win Rates:**\n`;
-      stats.topWinRates.forEach((userId, index) => {
-        const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
-        description += `${medal} <@${userId}>\n`;
-      });
-      description += `\n`;
-    }
-
-    // Top Win Streaks
-    if (stats.topWinStreaks && stats.topWinStreaks.length > 0) {
-      description += `🔥 **Longest Win Streaks:**\n`;
-      stats.topWinStreaks.forEach((userId, index) => {
-        const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
-        description += `${medal} <@${userId}>\n`;
-      });
-    }
+    description += `👥 **Unique Players:** ${stats.uniquePlayers}`;
 
     embed.setDescription(description);
+
+    // Helper function to format ranking list
+    const formatRankingList = (items, formatter = (item) => `<@${item}>`) => {
+      return (
+        items
+          .map((item, index) => `${medals[index]} ${formatter(item)}`)
+          .join("\n") || "No data available"
+      );
+    };
+
+    // Add ranking fields in two columns
+    // Left column
+    if (stats.topActivePlayers && stats.topActivePlayers.length > 0) {
+      embed.addFields({
+        name: "🏆 Most Active Players",
+        value: formatRankingList(
+          stats.topActivePlayers,
+          (player) => `<@${player.userId}> - ${player.count} results`,
+        ),
+        inline: true,
+      });
+    }
+
+    if (stats.topWinRates && stats.topWinRates.length > 0) {
+      embed.addFields({
+        name: "📈 Best Win Rates",
+        value: formatRankingList(stats.topWinRates),
+        inline: true,
+      });
+    }
+
+    // Add invisible field for spacing (creates a new row)
+    embed.addFields({ name: "\u200B", value: "\u200B", inline: false });
+
+    // Right column
+    if (stats.topWinners && stats.topWinners.length > 0) {
+      embed.addFields({
+        name: "🎖️ Top Winners",
+        value: formatRankingList(stats.topWinners),
+        inline: true,
+      });
+    }
+
+    if (stats.topWinStreaks && stats.topWinStreaks.length > 0) {
+      embed.addFields({
+        name: "🔥 Longest Win Streaks",
+        value: formatRankingList(stats.topWinStreaks),
+        inline: true,
+      });
+    }
     await interaction.reply({ embeds: [embed] });
   } catch (err) {
     error(
