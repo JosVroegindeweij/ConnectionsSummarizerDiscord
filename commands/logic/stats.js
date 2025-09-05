@@ -100,6 +100,20 @@ async function displayGlobalStats(interaction) {
       });
     }
 
+    if (stats.topWinners && stats.topWinners.length > 0) {
+      embed.addFields({
+        name: "🎖️ Top Winners",
+        value: formatRankingList(
+          stats.topWinners,
+          (player) => `<@${player.userId}> - ${player.wins} wins`,
+        ),
+        inline: true,
+      });
+    }
+
+    // Add invisible field for spacing (creates a new row)
+    embed.addFields({ name: "\u200B", value: "\u200B", inline: false });
+
     if (stats.topWinRates && stats.topWinRates.length > 0) {
       embed.addFields({
         name: "📈 Best Win Rates",
@@ -118,7 +132,7 @@ async function displayGlobalStats(interaction) {
         value: formatRankingList(
           stats.worstWinRates,
           (player) =>
-            `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}%`,
+            `<@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`,
         ),
         inline: true,
       });
@@ -127,12 +141,13 @@ async function displayGlobalStats(interaction) {
     // Add invisible field for spacing (creates a new row)
     embed.addFields({ name: "\u200B", value: "\u200B", inline: false });
 
-    if (stats.topWinners && stats.topWinners.length > 0) {
+    if (stats.topUnfailing && stats.topUnfailing.length > 0) {
       embed.addFields({
-        name: "🎖️ Top Winners",
+        name: "🏆 The unfailing",
         value: formatRankingList(
-          stats.topWinners,
-          (player) => `<@${player.userId}> - ${player.wins} wins`,
+          stats.topUnfailing,
+          (player) =>
+            `<@${player.userId}> - ${(player.unfailingRate * 100).toFixed(1)}% (${player.unfailingGames} games)`,
         ),
         inline: true,
       });

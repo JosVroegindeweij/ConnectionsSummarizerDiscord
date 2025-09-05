@@ -211,6 +211,7 @@ export const getGlobalStats = async (guild) => {
     const topWinRates = getTopWinRates(winsPerPuzzlePerUser);
     const topWinStreaks = getTopWinStreaks(winsPerPuzzlePerUser);
     const worstWinRates = getWorstWinRates(winsPerPuzzlePerUser);
+    const topUnfailing = getTopUnfailing(resultsPerPuzzlePerUser);
 
     return {
       totalResults: totalResults?.count,
@@ -220,6 +221,7 @@ export const getGlobalStats = async (guild) => {
       topWinRates,
       topWinStreaks,
       worstWinRates,
+      topUnfailing,
     };
   } catch (err) {
     error(`Error getting global stats: ${err}`, guild.name);
@@ -309,6 +311,33 @@ const getWorstWinRates = (winsByPuzzle) => {
       userId,
       winRate,
       totalGames,
+    }))
+    .value();
+};
+
+const getTopUnfailing = (resultsPerPuzzlePerUser) => {
+  return _(resultsPerPuzzlePerUser)
+    .mapValues((byPuzzle) => {
+      const values = _.values(byPuzzle);
+      const totalGames = values.length;
+      const unfailingGames = _.filter(
+        values,
+        (result) => result.length === 4,
+      ).length;
+      return {
+        totalGames,
+        unfailingGames,
+        unfailingRate: unfailingGames / totalGames,
+      };
+    })
+    .toPairs()
+    .filter(([, stats]) => stats.totalGames >= 10)
+    .orderBy(([, stats]) => stats.unfailingRate, ["desc"])
+    .take(3)
+    .map(([userId, stats]) => ({
+      userId,
+      unfailingRate: stats.unfailingRate,
+      unfailingGames: stats.unfailingGames,
     }))
     .value();
 };
