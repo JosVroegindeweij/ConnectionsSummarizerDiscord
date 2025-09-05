@@ -190,7 +190,7 @@ export const getGlobalStats = async (guild) => {
       .orderBy("count", "desc")
       .limit(3);
 
-    const resultsPerPuzzlePerUser = getAllResults(guild);
+    const resultsPerPuzzlePerUser = await getAllResults(guild);
 
     const topActivePlayers = _.map(mostActivePlayers, (p) => ({
       userId: p.user_id,
