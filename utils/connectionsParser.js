@@ -1,5 +1,3 @@
-import { info } from "./logger.js";
-
 const colors = {
   "🟩": 0,
   "🟨": 1,

@@ -39,6 +39,9 @@ export const data = new SlashCommandBuilder()
   );
 
 export const execute = async (interaction) => {
+  if (interaction.author.id !== "257495886844657684")
+    await interaction.reply("You do not have permission to use this command!");
+
   const subcommand = interaction.options.getSubcommand();
 
   if (subcommand === "start") {
