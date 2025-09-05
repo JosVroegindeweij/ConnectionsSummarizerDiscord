@@ -91,7 +91,7 @@ async function displayGlobalStats(interaction) {
 
     if (stats.topActivePlayers && stats.topActivePlayers.length > 0) {
       embed.addFields({
-        name: "🏆 Most Active Players",
+        name: "🏃‍♂️ Most Active Players",
         value: formatRankingList(
           stats.topActivePlayers,
           (player) => `<@${player.userId}> - ${player.count} results`,
