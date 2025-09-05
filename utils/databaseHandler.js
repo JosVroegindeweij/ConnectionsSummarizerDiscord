@@ -249,7 +249,7 @@ const getTopWinRates = (winsByPuzzle) => {
     })
     .toPairs()
     .filter(([, stats]) => stats.totalGames >= 10)
-    .orderBy([1], ["desc"])
+    .orderBy(([, stats]) => stats.winRate, ["desc"])
     .take(3)
     .map(([userId, stats]) => ({
       userId,
@@ -303,7 +303,7 @@ const getWorstWinRates = (winsByPuzzle) => {
       };
     })
     .toPairs()
-    .orderBy([1], ["asc"]) // ascending order for worst rates
+    .orderBy(([, stats]) => stats.winRate, ["asc"]) // ascending order for worst rates
     .take(3)
     .map(([userId, { winRate, totalGames }]) => ({
       userId,
