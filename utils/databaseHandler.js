@@ -162,3 +162,158 @@ export const isChannelMonitored = async (guild, channel) => {
     return false; // Fail safely - don't monitor if we can't check
   }
 };
+
+// Stats query functions
+export const getGlobalStats = async (guild) => {
+  try {
+    info(`Getting global stats for guild ${guild.name}`);
+
+    // Total connection results shared
+    const totalResults = await knex("connectionsresult")
+      .where("guild_id", guild.id)
+      .count("* as count")
+      .first();
+
+    // Total different players that shared a result
+    const uniquePlayers = await knex("connectionsresult")
+      .where("guild_id", guild.id)
+      .countDistinct("user_id as count")
+      .first();
+
+    // Player with the most results shared
+    const mostActivePlayers = await knex("connectionsresult")
+      .where("guild_id", guild.id)
+      .select("user_id")
+      .count("* as count")
+      .groupBy("user_id")
+      .orderBy("count", "desc")
+      .limit(3);
+
+    const resultsPerPuzzlePerUser = getAllResults(guild);
+
+    const winsPerPuzzlePerUser = resultsPerPuzzlePerUser.mapValues(
+      (resultByPuzzle) =>
+        resultByPuzzle.mapValues(
+          (result) =>
+            result.length < 7 ||
+            result[6].some((cell) => cell.color !== result[6][0].color),
+        ),
+    );
+
+    const topActivePlayers = mostActivePlayers.map((p) => ({
+      userId: p.user_id,
+      count: parseInt(p.count),
+    }));
+    const topWinners = getTopWinners(winsPerPuzzlePerUser);
+    const topWinRates = getTopWinRates(winsPerPuzzlePerUser);
+    const topWinStreaks = getTopWinStreaks(winsPerPuzzlePerUser);
+
+    // For win rate and win streak, we need to analyze the result patterns
+    // A "win" is typically when someone solves the puzzle (completes all 4 groups)
+    // This requires analyzing the ConnectionsResultCell data to count completed groups
+    const playerStats = await getPlayerWinStats(guild);
+
+    return {
+      totalResults: totalResults?.count,
+      uniquePlayers: uniquePlayers?.count,
+      topActivePlayers: topActivePlayers,
+      topWinners: topWinners,
+      topWinRates: topWinRates,
+      topWinStreaks: topWinStreaks,
+    };
+  } catch (err) {
+    error(`Error getting global stats: ${err}`, guild.name);
+    return null;
+  }
+};
+
+const getTopWinners = (winsByPuzzle) => {
+  const winsPerUser = winsByPuzzle.mapValues(
+    (byPuzzle) => Object.values(byPuzzle).filter((isWin) => isWin).length,
+  );
+  return Object.entries(winsPerUser)
+    .sort(([, v1], [, v2]) => v2 - v1)
+    .slice(0, 3)
+    .map(([k]) => k);
+};
+
+const getTopWinRates = (winsByPuzzle) => {
+  const percPerUser = winsByPuzzle.mapValues(
+    (byPuzzle) =>
+      Object.values(byPuzzle).filter((isWin) => isWin).length /
+      Object.values(byPuzzle).length,
+  );
+  return Object.entries(percPerUser)
+    .sort(([, v1], [, v2]) => v2 - v1)
+    .slice(0, 3)
+    .map(([k]) => k);
+};
+
+const getTopWinStreaks = (winsByPuzzle) => {
+  const winStreaks = {};
+  for (const [userId, puzzles] of Object.entries(winsByPuzzle)) {
+    winStreaks[userId] = getLongestWinStreak(puzzles);
+  }
+  return Object.entries(winStreaks)
+    .sort(([, v1], [, v2]) => v2 - v1)
+    .slice(0, 3)
+    .map(([k]) => k);
+};
+
+const getLongestWinStreak = (puzzles) => {
+  let longestStreak = 0;
+  let currentStreak = 0;
+  const puzzleNumbers = Object.keys(puzzles)
+    .map((n) => parseInt(n, 10))
+    .sort((a, b) => a - b);
+
+  for (const puzzleNum of puzzleNumbers) {
+    const isWin = puzzles[puzzleNum];
+    if (isWin) {
+      currentStreak++;
+      longestStreak = Math.max(longestStreak, currentStreak);
+    } else {
+      currentStreak = 0;
+    }
+  }
+  return longestStreak;
+};
+
+const getAllResults = async (guild) => {
+  try {
+    // Get all results with their cell data, properly ordered
+    const rawResults = await knex("connectionsresult as cr")
+      .where("cr.guild_id", guild.id)
+      .leftJoin("connectionsresultcell as crc", "cr.id", "crc.result_id")
+      .leftJoin("connectionscelldef as ccd", "crc.cell_id", "ccd.id")
+      .select(
+        "cr.user_id",
+        "cr.id as result_id",
+        "cr.puzzle_number",
+        "cr.timestamp",
+        "ccd.row",
+        "ccd.col",
+        "ccd.color",
+      )
+      .orderBy(["cr.user_id", "cr.timestamp", "ccd.row", "ccd.col"]);
+
+    const results = {};
+
+    for (const resultRow of rawResults) {
+      const { user_id, puzzle_number, row, col, color } = resultRow;
+
+      if (!results[user_id]) results[user_id] = {};
+      if (!results[user_id][puzzle_number])
+        results[user_id][puzzle_number] = [];
+
+      const grid = results[user_id][puzzle_number];
+
+      if (!grid[row]) grid[row] = new Array(4).fill(null);
+      grid[row][col] = color;
+    }
+    return results;
+  } catch (err) {
+    error(`Error getting all results: ${err}`, guild.name);
+    return {};
+  }
+};
