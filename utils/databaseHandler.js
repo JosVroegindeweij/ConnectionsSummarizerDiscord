@@ -200,11 +200,9 @@ export const getGlobalStats = async (guild) => {
     const winsPerPuzzlePerUser = _.mapValues(
       resultsPerPuzzlePerUser,
       (resultByPuzzle) =>
-        _.mapValues(resultByPuzzle, (result) =>
-          _.every(
-            result[result.length - 1],
-            (cell) => cell === result[result.length - 1][0],
-          ),
+        _.mapValues(
+          resultByPuzzle,
+          (result) => _.uniq(result[result.length - 1]).length === 1,
         ),
     );
     const topWinners = getTopWinners(winsPerPuzzlePerUser);
@@ -322,7 +320,7 @@ const getTopUnfailing = (resultsPerPuzzlePerUser) => {
       const totalGames = values.length;
       const unfailingGames = _.filter(
         values,
-        (result) => result.length === 4,
+        (result) => result.length === 4 && _.uniq(result[3]).length === 1,
       ).length;
       return {
         totalGames,
