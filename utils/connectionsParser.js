@@ -1,4 +1,4 @@
-const colors = {
+export const colors = {
   "🟩": 0,
   "🟨": 1,
   "🟦": 2,

@@ -2,6 +2,7 @@ import { info, error } from "./logger.js";
 import knexConstructor from "knex";
 import config from "../secrets/config.json" with { type: "json" };
 import _ from "lodash";
+import { colors } from "./connectionsParser.js";
 
 const knex = knexConstructor({
   client: "pg",
@@ -210,6 +211,13 @@ export const getGlobalStats = async (guild) => {
     const topWinStreaks = getTopWinStreaks(winsPerPuzzlePerUser);
     const worstWinRates = getWorstWinRates(winsPerPuzzlePerUser);
     const topUnfailing = getTopUnfailing(resultsPerPuzzlePerUser);
+    const topColors = getTopColors(resultsPerPuzzlePerUser);
+    const topColorsGuessed = topColors.sort(
+      (a, b) => a.successRate - b.successRate,
+    );
+    const topColorsDifficulty = topColors.sort(
+      (a, b) => a.averageScore - b.averageScore,
+    );
 
     return {
       totalResults: totalResults?.count,
@@ -220,6 +228,8 @@ export const getGlobalStats = async (guild) => {
       topWinStreaks,
       worstWinRates,
       topUnfailing,
+      topColorsGuessed,
+      topColorsDifficulty,
     };
   } catch (err) {
     error(`Error getting global stats: ${err}`, guild.name);
@@ -338,6 +348,67 @@ const getTopUnfailing = (resultsPerPuzzlePerUser) => {
       unfailingGames: stats.unfailingGames,
     }))
     .value();
+};
+
+const invertedColors = _.invert(colors);
+
+const getTopColors = (resultsPerPuzzlePerUser) => {
+  const colorScores = {};
+  let totalGames = 0;
+  const UNSOLVED_PENALTY = 8; // Score for colors never guessed correctly
+
+  for (const byPuzzle of Object.values(resultsPerPuzzlePerUser)) {
+    for (const result of Object.values(byPuzzle)) {
+      totalGames++;
+
+      // Track which colors were successfully guessed and at what position
+      const solvedColors = new Map(); // color -> attempt number (1-based)
+
+      for (let attempt = 0; attempt < result.length; attempt++) {
+        const row = result[attempt];
+
+        // Check if this row represents a successful guess (all same color)
+        if (_.uniq(row).length === 1) {
+          solvedColors.set(row[0], attempt + 1); // Store 1-based attempt number
+        }
+      }
+
+      // For each color (0-3), assign a difficulty score for this game
+      for (let color = 0; color < 4; color++) {
+        if (!colorScores[color]) {
+          colorScores[color] = {
+            totalScore: 0,
+            games: 0,
+            solvedCount: 0,
+          };
+        }
+
+        colorScores[color].games++;
+
+        if (solvedColors.has(color)) {
+          // Color was solved - score is the attempt number
+          colorScores[color].totalScore += solvedColors.get(color);
+          colorScores[color].solvedCount++;
+        } else {
+          // Color was never solved - apply penalty
+          colorScores[color].totalScore += UNSOLVED_PENALTY;
+        }
+      }
+    }
+  }
+
+  // Calculate average scores and convert to relative difficulty percentages
+  const avgScores = Object.entries(colorScores).map(([colorNum, stats]) => ({
+    color: parseInt(colorNum),
+    averageScore: stats.totalScore / stats.games,
+    successRate: stats.solvedCount / stats.games,
+  }));
+
+  return avgScores.map(({ color, averageScore, successRate }) => ({
+    color: invertedColors[color],
+    averageScore: averageScore.toFixed(2),
+    successRate: (successRate * 100).toFixed(1) + "%",
+  }));
 };
 
 const getAllResults = async (guild) => {

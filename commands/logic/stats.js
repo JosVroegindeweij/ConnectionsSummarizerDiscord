@@ -30,7 +30,7 @@ export async function execute(interaction) {
   }
 }
 
-const medals = ["🥇", "🥈", "🥉"];
+const medals = ["🥇", "🥈", "🥉", "🏅"];
 
 async function displayGlobalStats(interaction) {
   try {
@@ -159,6 +159,31 @@ async function displayGlobalStats(interaction) {
         value: formatRankingList(
           stats.topWinStreaks,
           (player) => `<@${player.userId}> - ${player.winStreak} streak`,
+        ),
+        inline: true,
+      });
+    }
+
+    // Add invisible field for spacing (creates a new row)
+    embed.addFields({ name: "\u200B", value: "\u200B", inline: false });
+
+    if (stats.topColorsGuessed && stats.topColorsGuessed.length > 0) {
+      embed.addFields({
+        name: "🧩 Easiest Colors (by guess rate)",
+        value: formatRankingList(
+          stats.topColorsGuessed,
+          (color) => `${color.color} - ${color.successRate} guessed`,
+        ),
+        inline: true,
+      });
+    }
+
+    if (stats.topColorsDifficulty && stats.topColorsDifficulty.length > 0) {
+      embed.addFields({
+        name: "🧩 Hardest Colors (by average position)",
+        value: formatRankingList(
+          stats.topColorsDifficulty,
+          (color) => `${color.color} - ${color.averageScore}'th guess`,
         ),
         inline: true,
       });
