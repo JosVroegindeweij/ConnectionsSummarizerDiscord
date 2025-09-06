@@ -27,7 +27,7 @@ export const parseConnectionsResult = (messageContent) => {
       }
     }
 
-    const cleanLine = line.replace(/\s+/g, "");
+    const cleanLine = line.replace(/[^🟩🟨🟦🟪]/g, "");
     if (/[🟩🟨🟦🟪]{8}/.test(cleanLine)) {
       result.push(Array.from(cleanLine).map((char) => colors[char]));
       rowCount++;
