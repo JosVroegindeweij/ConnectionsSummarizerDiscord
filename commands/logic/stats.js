@@ -30,8 +30,6 @@ export async function execute(interaction) {
   }
 }
 
-const medals = ["🥇", "🥈", "🥉", "🏅"];
-
 async function displayGlobalStats(interaction) {
   try {
     const stats = await getGlobalStats(interaction.guild);
@@ -76,18 +74,6 @@ async function displayGlobalStats(interaction) {
     description += `👥 **Unique players:** ${stats.uniquePlayers}`;
 
     embed.setDescription(description);
-
-    // Helper function to format ranking list
-    const formatRankingList = (
-      items,
-      formatter = (item) => `<@${item.userId || item}>`,
-    ) => {
-      return (
-        items
-          .map((item, index) => `${medals[index]} ${formatter(item)}`)
-          .join("\n") || "No data available"
-      );
-    };
 
     if (stats.topActivePlayers && stats.topActivePlayers.length > 0) {
       embed.addFields({
@@ -395,3 +381,17 @@ async function displayUserStats(interaction, targetUser) {
     await interaction.reply({ embeds: [embed] });
   }
 }
+
+const medals = ["🥇", "🥈", "🥉", "🏅"];
+
+// Helper function to format ranking list
+const formatRankingList = (
+  items,
+  formatter = (item) => `<@${item.userId || item}>`,
+) => {
+  return (
+    items
+      .map((item, index) => `${medals[index]} ${formatter(item)}`)
+      .join("\n") || "No data available"
+  );
+};
