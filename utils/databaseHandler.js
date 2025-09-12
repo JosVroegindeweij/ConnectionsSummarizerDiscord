@@ -166,6 +166,84 @@ export const isChannelMonitored = async (guild, channel) => {
 };
 
 // Stats query functions
+export const getUserStats = async (guild, userId) => {
+  try {
+    info(`Getting user stats for user ${userId} in guild ${guild.name}`);
+
+    // Total connection results shared by this user
+    const totalResults = await knex("connectionsresult")
+      .where("guild_id", guild.id)
+      .where("user_id", userId)
+      .count("* as count")
+      .first();
+
+    if (!totalResults?.count || totalResults.count === 0) {
+      return null; // User has no results
+    }
+
+    const resultsPerPuzzlePerUser = await getAllResults(guild);
+    const userResults = resultsPerPuzzlePerUser[userId] || {};
+
+    const winsPerPuzzlePerUser = _.mapValues(
+      resultsPerPuzzlePerUser,
+      (resultByPuzzle) =>
+        _.mapValues(
+          resultByPuzzle,
+          (result) => _.uniq(result[result.length - 1]).length === 1,
+        ),
+    );
+
+    // Get all rankings to find user's position
+    const allWinners = getAllWinners(winsPerPuzzlePerUser);
+    const allWinRates = getAllWinRates(winsPerPuzzlePerUser);
+    const allWinStreaks = getAllWinStreaks(winsPerPuzzlePerUser);
+    const allUnfailing = getAllUnfailing(resultsPerPuzzlePerUser);
+    const allActivePlayers = _(resultsPerPuzzlePerUser)
+      .mapValues((byPuzzle) => _.values(byPuzzle).length)
+      .toPairs()
+      .orderBy([1], ["desc"])
+      .map(([userId, gamesPlayed]) => ({ userId, gamesPlayed }))
+      .value();
+
+    // Find user's rank and adjacent players for each category
+    const getUserRankingWithNeighbors = (rankings, userIdField = "userId") => {
+      const userIndex = rankings.findIndex(
+        (item) => item[userIdField] === userId,
+      );
+      if (userIndex === -1) return null;
+
+      return {
+        userRank: userIndex + 1,
+        user: rankings[userIndex],
+        previous: userIndex > 0 ? rankings[userIndex - 1] : null,
+        next: userIndex < rankings.length - 1 ? rankings[userIndex + 1] : null,
+      };
+    };
+
+    const activityRanking = getUserRankingWithNeighbors(allActivePlayers);
+    const winnerRanking = getUserRankingWithNeighbors(allWinners);
+    const winRateRanking = getUserRankingWithNeighbors(allWinRates);
+    const unfailingRanking = getUserRankingWithNeighbors(allUnfailing);
+    const streakRanking = getUserRankingWithNeighbors(allWinStreaks);
+
+    // Calculate color stats for this user only
+    const userColorStats = getUserColorStats(userResults);
+
+    return {
+      totalResults: parseInt(totalResults.count),
+      activityRanking,
+      winnerRanking,
+      winRateRanking,
+      unfailingRanking,
+      streakRanking,
+      colorStats: userColorStats,
+    };
+  } catch (err) {
+    error(`Error getting user stats: ${err}`, guild.name);
+    return null;
+  }
+};
+
 export const getGlobalStats = async (guild) => {
   try {
     info(`Getting global stats for guild ${guild.name}`);
@@ -233,6 +311,52 @@ export const getGlobalStats = async (guild) => {
     };
   } catch (err) {
     error(`Error getting global stats: ${err}`, guild.name);
+    return null;
+  }
+};
+
+export const getLeaderboard = async (guild, type) => {
+  try {
+    info(`Getting leaderboard for type ${type} in guild ${guild.name}`);
+
+    const resultsPerPuzzlePerUser = await getAllResults(guild);
+
+    const winsPerPuzzlePerUser = _.mapValues(
+      resultsPerPuzzlePerUser,
+      (resultByPuzzle) =>
+        _.mapValues(
+          resultByPuzzle,
+          (result) => _.uniq(result[result.length - 1]).length === 1,
+        ),
+    );
+
+    switch (type) {
+      case "winrate":
+        return getAllWinRates(winsPerPuzzlePerUser);
+
+      case "played":
+        // Calculate total games played by each user
+        return _(resultsPerPuzzlePerUser)
+          .mapValues((byPuzzle) => _.values(byPuzzle).length)
+          .toPairs()
+          .orderBy([1], ["desc"])
+          .map(([userId, gamesPlayed]) => ({ userId, gamesPlayed }))
+          .value();
+
+      case "winner":
+        return getAllWinners(winsPerPuzzlePerUser);
+
+      case "unfailing":
+        return getAllUnfailing(resultsPerPuzzlePerUser);
+
+      case "winstreaks":
+        return getAllWinStreaks(winsPerPuzzlePerUser);
+
+      default:
+        throw new Error(`Unknown leaderboard type: ${type}`);
+    }
+  } catch (err) {
+    error(`Error getting leaderboard: ${err}`, guild.name);
     return null;
   }
 };
@@ -408,6 +532,78 @@ const getTopColors = (resultsPerPuzzlePerUser) => {
     averageScore: averageScore.toFixed(2),
     successRate: (successRate * 100).toFixed(1) + "%",
   }));
+};
+
+const getUserColorStats = (userResults) => {
+  const colorScores = {};
+  let totalGames = 0;
+  const UNSOLVED_PENALTY = 8; // Score for colors never guessed correctly
+
+  for (const result of Object.values(userResults)) {
+    totalGames++;
+
+    // Track which colors were successfully guessed and at what position
+    const solvedColors = new Map(); // color -> attempt number (1-based)
+
+    for (let attempt = 0; attempt < result.length; attempt++) {
+      const row = result[attempt];
+
+      // Check if this row represents a successful guess (all same color)
+      if (_.uniq(row).length === 1) {
+        solvedColors.set(row[0], attempt + 1); // Store 1-based attempt number
+      }
+    }
+
+    // For each color (0-3), assign a difficulty score for this game
+    for (let color = 0; color < 4; color++) {
+      if (!colorScores[color]) {
+        colorScores[color] = {
+          totalScore: 0,
+          games: 0,
+          solvedCount: 0,
+        };
+      }
+
+      colorScores[color].games++;
+
+      if (solvedColors.has(color)) {
+        // Color was solved - score is the attempt number
+        colorScores[color].totalScore += solvedColors.get(color);
+        colorScores[color].solvedCount++;
+      } else {
+        // Color was never solved - apply penalty
+        colorScores[color].totalScore += UNSOLVED_PENALTY;
+      }
+    }
+  }
+
+  // Calculate average scores and convert to relative difficulty percentages
+  const avgScores = Object.entries(colorScores).map(([colorNum, stats]) => ({
+    color: parseInt(colorNum),
+    averageScore: stats.totalScore / stats.games,
+    successRate: stats.solvedCount / stats.games,
+  }));
+
+  const colorsByGuessRate = avgScores
+    .map(({ color, averageScore, successRate }) => ({
+      color: invertedColors[color],
+      averageScore: averageScore.toFixed(2),
+      successRate: (successRate * 100).toFixed(1) + "%",
+    }))
+    .sort((a, b) => parseFloat(b.successRate) - parseFloat(a.successRate));
+
+  const colorsByAvgPosition = avgScores
+    .map(({ color, averageScore, successRate }) => ({
+      color: invertedColors[color],
+      averageScore: averageScore.toFixed(2),
+      successRate: (successRate * 100).toFixed(1) + "%",
+    }))
+    .sort((a, b) => parseFloat(a.averageScore) - parseFloat(b.averageScore));
+
+  return {
+    byGuessRate: colorsByGuessRate,
+    byAvgPosition: colorsByAvgPosition,
+  };
 };
 
 const getAllResults = async (guild) => {
