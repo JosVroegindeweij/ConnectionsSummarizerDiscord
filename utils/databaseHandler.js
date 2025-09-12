@@ -276,7 +276,7 @@ const getTopWinRates = (winsByPuzzle) => {
 };
 
 const getWorstWinRates = (winsByPuzzle) => {
-  return getAllWinRates(winsByPuzzle).slice(-3);
+  return _.reverse(getAllWinRates(winsByPuzzle).slice(-3));
 };
 
 const getAllWinStreaks = (winsByPuzzle) => {

@@ -181,10 +181,10 @@ async function displayGlobalStats(interaction) {
 
     if (stats.topColorsDifficulty && stats.topColorsDifficulty.length > 0) {
       embed.addFields({
-        name: "🧩 Hardest Colors (by average position)",
+        name: "🧩 Easiest Colors (by average guessed position)",
         value: formatRankingList(
           stats.topColorsDifficulty,
-          (color) => `${color.color} - ${color.averageScore}'th guess`,
+          (color) => `${color.color} - ${color.averageScore}`,
         ),
         inline: true,
       });
