@@ -29,8 +29,6 @@ export async function execute(interaction) {
   await displayLeaderboard(interaction, leaderboardType);
 }
 
-const medals = ["🥇", "🥈", "🥉"];
-
 async function displayLeaderboard(interaction, type) {
   try {
     const leaderboardData = await getLeaderboard(interaction.guild, type);
@@ -84,40 +82,35 @@ async function displayLeaderboard(interaction, type) {
       case "winrate":
         title = "📈 Win Rate Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
-          return `${emoji} <@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`;
+          return `${rank + 1}. <@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`;
         });
         break;
 
       case "played":
         title = "🎯 Games Played Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
-          return `${emoji} <@${player.userId}> - ${player.gamesPlayed} games`;
+          return `${rank + 1}. <@${player.userId}> - ${player.gamesPlayed} games`;
         });
         break;
 
       case "winner":
         title = "🎖️ Total Wins Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
-          return `${emoji} <@${player.userId}> - ${player.wins} wins`;
+          return `${rank + 1}. <@${player.userId}> - ${player.wins} wins`;
         });
         break;
 
       case "unfailing":
         title = "🏆 Unfailing Rate Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
-          return `${emoji} <@${player.userId}> - ${(player.unfailingRate * 100).toFixed(1)}% (${player.unfailingGames} perfect games)`;
+          return `${rank + 1}. <@${player.userId}> - ${(player.unfailingRate * 100).toFixed(1)}% (${player.unfailingGames} perfect games)`;
         });
         break;
 
       case "winstreaks":
         title = "🔥 Win Streaks Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
-          return `${emoji} <@${player.userId}> - ${player.winStreak} streak (current: ${player.currentStreak})`;
+          return `${rank + 1}. <@${player.userId}> - ${player.winStreak} streak (current: ${player.currentStreak})`;
         });
         break;
 

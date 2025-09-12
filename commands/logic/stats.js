@@ -336,6 +336,9 @@ async function displayUserStats(interaction, targetUser) {
       });
     }
 
+    // Add invisible field for spacing (creates a new row)
+    embed.addFields({ name: "\u200B", value: "\u200B", inline: false });
+
     // Color stats
     if (stats.colorStats) {
       // Easiest colors by guess rate
@@ -343,16 +346,12 @@ async function displayUserStats(interaction, targetUser) {
         stats.colorStats.byGuessRate &&
         stats.colorStats.byGuessRate.length > 0
       ) {
-        const colorsByGuessRate = stats.colorStats.byGuessRate
-          .map(
-            (color, index) =>
-              `${index + 1}. ${color.color} - ${color.successRate}`,
-          )
-          .join("\n");
-
         embed.addFields({
           name: "🧩 Easiest colors (by guess rate)",
-          value: colorsByGuessRate,
+          value: formatRankingList(
+            stats.colorStats.byGuessRate,
+            (color) => `${color.color} - ${color.successRate} guessed`,
+          ),
           inline: true,
         });
       }
@@ -362,16 +361,12 @@ async function displayUserStats(interaction, targetUser) {
         stats.colorStats.byAvgPosition &&
         stats.colorStats.byAvgPosition.length > 0
       ) {
-        const colorsByAvgPosition = stats.colorStats.byAvgPosition
-          .map(
-            (color, index) =>
-              `${index + 1}. ${color.color} - ${color.averageScore}th guess`,
-          )
-          .join("\n");
-
         embed.addFields({
           name: "🧩 Easiest colors (by average position)",
-          value: colorsByAvgPosition,
+          value: formatRankingList(
+            stats.colorStats.byAvgPosition,
+            (color) => `${color.color} - ${color.averageScore}th guess`,
+          ),
           inline: true,
         });
       }
