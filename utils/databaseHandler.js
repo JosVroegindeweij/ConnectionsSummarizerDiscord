@@ -237,17 +237,20 @@ export const getGlobalStats = async (guild) => {
   }
 };
 
-const getTopWinners = (winsByPuzzle) => {
+const getAllWinners = (winsByPuzzle) => {
   return _(winsByPuzzle)
     .mapValues((byPuzzle) => _.filter(byPuzzle, Boolean).length)
     .toPairs()
     .orderBy([1], ["desc"])
-    .take(3)
     .map(([userId, wins]) => ({ userId, wins }))
     .value();
 };
 
-const getTopWinRates = (winsByPuzzle) => {
+const getTopWinners = (winsByPuzzle) => {
+  return getAllWinners(winsByPuzzle).slice(0, 3);
+};
+
+const getAllWinRates = (winsByPuzzle) => {
   return _(winsByPuzzle)
     .mapValues((byPuzzle) => {
       const values = _.values(byPuzzle);
@@ -260,7 +263,6 @@ const getTopWinRates = (winsByPuzzle) => {
     .toPairs()
     .filter(([, stats]) => stats.totalGames >= 10)
     .orderBy(([, stats]) => stats.winRate, ["desc"])
-    .take(3)
     .map(([userId, stats]) => ({
       userId,
       winRate: stats.winRate,
@@ -269,18 +271,29 @@ const getTopWinRates = (winsByPuzzle) => {
     .value();
 };
 
-const getTopWinStreaks = (winsByPuzzle) => {
+const getTopWinRates = (winsByPuzzle) => {
+  return getAllWinRates(winsByPuzzle).slice(0, 3);
+};
+
+const getWorstWinRates = (winsByPuzzle) => {
+  return getAllWinRates(winsByPuzzle).slice(-3);
+};
+
+const getAllWinStreaks = (winsByPuzzle) => {
   const winStreaks = _.mapValues(winsByPuzzle, getLongestWinStreak);
   return _(winStreaks)
     .toPairs()
     .orderBy(([, streakData]) => streakData.longestStreak, ["desc"])
-    .take(3)
     .map(([userId, streakData]) => ({
       userId,
       winStreak: streakData.longestStreak,
       currentStreak: streakData.currentStreak,
     }))
     .value();
+};
+
+const getTopWinStreaks = (winsByPuzzle) => {
+  return getAllWinStreaks(winsByPuzzle).slice(0, 3);
 };
 
 const getLongestWinStreak = (puzzles) => {
@@ -306,28 +319,7 @@ const getLongestWinStreak = (puzzles) => {
   );
 };
 
-const getWorstWinRates = (winsByPuzzle) => {
-  return _(winsByPuzzle)
-    .mapValues((byPuzzle) => {
-      const values = _.values(byPuzzle);
-      const totalGames = values.length;
-      return {
-        totalGames,
-        winRate: _.filter(values, Boolean).length / totalGames,
-      };
-    })
-    .toPairs()
-    .orderBy(([, stats]) => stats.winRate, ["asc"]) // ascending order for worst rates
-    .take(3)
-    .map(([userId, { winRate, totalGames }]) => ({
-      userId,
-      winRate,
-      totalGames,
-    }))
-    .value();
-};
-
-const getTopUnfailing = (resultsPerPuzzlePerUser) => {
+const getAllUnfailing = (resultsPerPuzzlePerUser) => {
   return _(resultsPerPuzzlePerUser)
     .mapValues((byPuzzle) => {
       const values = _.values(byPuzzle);
@@ -345,13 +337,16 @@ const getTopUnfailing = (resultsPerPuzzlePerUser) => {
     .toPairs()
     .filter(([, stats]) => stats.totalGames >= 10)
     .orderBy(([, stats]) => stats.unfailingRate, ["desc"])
-    .take(3)
     .map(([userId, stats]) => ({
       userId,
       unfailingRate: stats.unfailingRate,
       unfailingGames: stats.unfailingGames,
     }))
     .value();
+};
+
+const getTopUnfailing = (resultsPerPuzzlePerUser) => {
+  return getAllUnfailing(resultsPerPuzzlePerUser).slice(0, 3);
 };
 
 const invertedColors = _.invert(colors);
