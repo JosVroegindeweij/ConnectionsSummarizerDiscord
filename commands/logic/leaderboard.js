@@ -84,7 +84,7 @@ async function displayLeaderboard(interaction, type) {
       case "winrate":
         title = "📈 Win Rate Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : rank;
+          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
           return `${emoji} <@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`;
         });
         break;
@@ -92,7 +92,7 @@ async function displayLeaderboard(interaction, type) {
       case "played":
         title = "🎯 Games Played Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : rank;
+          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
           return `${emoji} <@${player.userId}> - ${player.gamesPlayed} games`;
         });
         break;
@@ -100,7 +100,7 @@ async function displayLeaderboard(interaction, type) {
       case "winner":
         title = "🎖️ Total Wins Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : rank;
+          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
           return `${emoji} <@${player.userId}> - ${player.wins} wins`;
         });
         break;
@@ -108,7 +108,7 @@ async function displayLeaderboard(interaction, type) {
       case "unfailing":
         title = "🏆 Unfailing Rate Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : rank;
+          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
           return `${emoji} <@${player.userId}> - ${(player.unfailingRate * 100).toFixed(1)}% (${player.unfailingGames} perfect games)`;
         });
         break;
@@ -116,7 +116,7 @@ async function displayLeaderboard(interaction, type) {
       case "winstreaks":
         title = "🔥 Win Streaks Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const emoji = rank < 3 ? medals[rank] : rank;
+          const emoji = rank < 3 ? medals[rank] : `${rank}. `;
           return `${emoji} <@${player.userId}> - ${player.winStreak} streak (current: ${player.currentStreak})`;
         });
         break;
