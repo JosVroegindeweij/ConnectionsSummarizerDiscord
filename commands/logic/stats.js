@@ -158,7 +158,8 @@ async function displayGlobalStats(interaction) {
         name: "🔥 Longest Win Streaks",
         value: formatRankingList(
           stats.topWinStreaks,
-          (player) => `<@${player.userId}> - ${player.winStreak} streak`,
+          (player) =>
+            `<@${player.userId}> - ${player.winStreak} (cur: ${player.currentStreak})`,
         ),
         inline: true,
       });

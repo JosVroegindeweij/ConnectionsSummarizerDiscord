@@ -273,9 +273,13 @@ const getTopWinStreaks = (winsByPuzzle) => {
   const winStreaks = _.mapValues(winsByPuzzle, getLongestWinStreak);
   return _(winStreaks)
     .toPairs()
-    .orderBy([1], ["desc"])
+    .orderBy([1, 'longestStreak'], ["desc"])
     .take(3)
-    .map(([userId, winStreak]) => ({ userId, winStreak }))
+    .map(([userId, streakData]) => ({ 
+      userId, 
+      winStreak: streakData.longestStreak,
+      currentStreak: streakData.currentStreak
+    }))
     .value();
 };
 
@@ -299,7 +303,7 @@ const getLongestWinStreak = (puzzles) => {
       return acc;
     },
     { longestStreak: 0, currentStreak: 0 },
-  ).longestStreak;
+  );
 };
 
 const getWorstWinRates = (winsByPuzzle) => {
