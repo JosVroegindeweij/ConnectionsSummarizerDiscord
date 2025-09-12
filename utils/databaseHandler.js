@@ -273,12 +273,12 @@ const getTopWinStreaks = (winsByPuzzle) => {
   const winStreaks = _.mapValues(winsByPuzzle, getLongestWinStreak);
   return _(winStreaks)
     .toPairs()
-    .orderBy([1, 'longestStreak'], ["desc"])
+    .orderBy(([, streakData]) => streakData.longestStreak, ["desc"])
     .take(3)
-    .map(([userId, streakData]) => ({ 
-      userId, 
+    .map(([userId, streakData]) => ({
+      userId,
       winStreak: streakData.longestStreak,
-      currentStreak: streakData.currentStreak
+      currentStreak: streakData.currentStreak,
     }))
     .value();
 };
