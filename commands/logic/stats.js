@@ -321,7 +321,7 @@ async function displayUserStats(interaction, targetUser) {
             player.currentStreak < player.winStreak
           ) {
             const endDate = puzzleNumberToDate(player.longestStreakEndPuzzle);
-            streakText += `\nLongest streak ended: ${endDate}`;
+            streakText += ` (Longest streak ended: ${endDate})`;
           }
           return streakText;
         }),
