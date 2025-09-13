@@ -412,6 +412,7 @@ const getAllWinStreaks = (winsByPuzzle) => {
       userId,
       winStreak: streakData.longestStreak,
       currentStreak: streakData.currentStreak,
+      longestStreakEndPuzzle: streakData.longestStreakEndPuzzle,
     }))
     .value();
 };
@@ -433,13 +434,21 @@ const getLongestWinStreak = (puzzles) => {
       const isWin = puzzles[puzzleNum];
       if (isWin) {
         acc.currentStreak++;
-        acc.longestStreak = Math.max(acc.longestStreak, acc.currentStreak);
+        if (acc.currentStreak > acc.longestStreak) {
+          acc.longestStreak = acc.currentStreak;
+          // Store the puzzle number where the longest streak would end if broken
+          acc.longestStreakEndPuzzle = puzzleNum;
+        }
       } else {
+        // If we had a streak and it just broke, update the end date
+        if (acc.currentStreak > 0 && acc.currentStreak === acc.longestStreak) {
+          acc.longestStreakEndPuzzle = puzzleNum;
+        }
         acc.currentStreak = 0;
       }
       return acc;
     },
-    { longestStreak: 0, currentStreak: 0 },
+    { longestStreak: 0, currentStreak: 0, longestStreakEndPuzzle: null },
   );
 };
 
