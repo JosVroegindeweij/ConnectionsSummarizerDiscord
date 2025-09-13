@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import { info, error } from "../../utils/logger.js";
 import { getLeaderboard } from "../../utils/databaseHandler.js";
+import { puzzleNumberToDate } from "../../utils/dateUtils.js";
 
 export const data = new SlashCommandBuilder()
   .setName("leaderboard")
@@ -82,35 +83,44 @@ async function displayLeaderboard(interaction, type) {
       case "winrate":
         title = "📈 Win Rate Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          return `${rank + 1}. <@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`;
+          return `#${rank + 1} <@${player.userId}> - ${(player.winRate * 100).toFixed(1)}% (${player.totalGames} games)`;
         });
         break;
 
       case "played":
         title = "🎯 Games Played Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          return `${rank + 1}. <@${player.userId}> - ${player.gamesPlayed} games`;
+          return `#${rank + 1} <@${player.userId}> - ${player.gamesPlayed} games`;
         });
         break;
 
       case "winner":
         title = "🎖️ Total Wins Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          return `${rank + 1}. <@${player.userId}> - ${player.wins} wins`;
+          return `#${rank + 1} <@${player.userId}> - ${player.wins} wins`;
         });
         break;
 
       case "unfailing":
         title = "🏆 Unfailing Rate Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          return `${rank + 1}. <@${player.userId}> - ${(player.unfailingRate * 100).toFixed(1)}% (${player.unfailingGames} perfect games)`;
+          return `#${rank + 1} <@${player.userId}> - ${(player.unfailingRate * 100).toFixed(1)}% (${player.unfailingGames} perfect games)`;
         });
         break;
 
       case "winstreaks":
         title = "🔥 Win Streaks Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          return `${rank + 1}. <@${player.userId}> - ${player.winStreak} streak (current: ${player.currentStreak})`;
+          const streakText = `#${rank + 1} <@${player.userId}> - ${player.winStreak} (current: ${player.currentStreak})`;
+          if (
+            player.longestStreakEndPuzzle &&
+            player.winStreak > 0 &&
+            player.currentStreak < player.winStreak
+          ) {
+            const endDate = puzzleNumberToDate(player.longestStreakEndPuzzle);
+            streakText += ` (ended: ${endDate})`;
+          }
+          return streakText;
         });
         break;
 
