@@ -111,7 +111,7 @@ async function displayLeaderboard(interaction, type) {
       case "winstreaks":
         title = "🔥 Win Streaks Leaderboard";
         description = formatLeaderboard(leaderboardData, (player, rank) => {
-          const streakText = `#${rank + 1} <@${player.userId}> - ${player.winStreak} (current: ${player.currentStreak})`;
+          let streakText = `#${rank + 1} <@${player.userId}> - ${player.winStreak} (current: ${player.currentStreak})`;
           if (
             player.longestStreakEndPuzzle &&
             player.winStreak > 0 &&
