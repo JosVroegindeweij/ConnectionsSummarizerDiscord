@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import { info, error } from "../../utils/logger.js";
 import { getGlobalStats, getUserStats } from "../../utils/databaseHandler.js";
-import { puzzleNumberToDate } from "../../utils/dateUtils.js";
+import { puzzleNumberToDate } from "../../utils/connectionsUtils.js";
 
 export const data = new SlashCommandBuilder()
   .setName("stats")
